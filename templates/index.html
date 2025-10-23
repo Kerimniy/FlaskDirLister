@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta http-equiv="preload">
+    <title>{{ title }}</title>	
+    <meta name="description" content="DirectoryLister">
+    <meta name="robots" content="index, follow"/>
+    <link rel="icon" type="image/x-icon" href="{{url_for('static', filename='resource/logo.webp')}}"> 
+    <link href="{{url_for('static', filename='css/styles.css')}}" rel="stylesheet">
+		<script defer src="{{url_for('static', filename='js/script.js')}}"></script>
+
+
+
+
+</head>
+
+<body style="background-color: var(--bg); margin:auto" data-theme="{{ theme }}">
+    <div style="width: 100%;  height: 10vh; padding: auto; margin: 0%; position: relative; top: 0vh; display: block; background-color: var(--dc);">
+      
+      <div style="width: 4.5vh; height: 4.5vh; position: relative; top: 2.5vh; left: 15%;"><a href="{{hostname}}"><img style="width: 100%;" src="{{url_for('static', filename='resource/logo.webp')}}" ></a> </div>  
+      
+      <input id="query" class="input" type="text" placeholder="Search..." name="searchbar"/>
+      <label for="toggle" style="cursor: pointer;position: relative; top: -2.0vh; left: 71.5%;">
+          <input type="checkbox" name="toggle" id="toggle" style="display: none;">
+          <div class="togglebuttonBg">
+              <div class="togglebuttonSl"></div>
+          </div>
+      </label>   
+    </div>
+    <div style="width: 100%; height: 5vh; padding: auto; margin-bottom: 2%; position: relative; top: 0%; border-top: var(--line) solid 0.25vh;  display: block; background-color: var(--dc);">
+        <div style="color: #fdfeff; font-size: 2vh; position: relative; left: 15%; top: 50%; width: 70%; transform: translateY(-50%);">{{dirs|safe}}</div>
+    </div>
+
+    <div style="width: 95%; position: relative; left: 50%; min-height: 65vh; transform: translateX(-50%);">
+       {{readme|safe}}
+        
+        <div class="grid" style="padding-bottom: 1%; !important; background: none; !important;">
+            <div></div>
+            <div>Name</div>
+            <div style="text-align: right; margin-right: 10%;">Date</div>
+            <div style="text-align: right; margin-right: 10%;">Size</div>
+        </div>
+        {{content|safe}}
+    </div>
+
+    <div style="position: relative; bottom: 0%; margin: 0%;  width: 60%;margin-top: 5vh; height: 10vh; left: 50%; border-top: var(--footertext) solid 0.2vh;  transform: translateX(-50%);">
+        <p style="text-align: center; font-size: 2vh; color: var(--footertext);">FlaskDirLister BETA</p>
+    </div>
+</body>
+
+
+</html>
