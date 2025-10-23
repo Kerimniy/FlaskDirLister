@@ -10,11 +10,13 @@ from os import listdir,path
 from os.path import isfile, join
 from urllib.parse import quote, unquote
 import markdown
+import pathlib
 
 
 app = Flask(__name__)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 PATH = path.dirname(path.realpath(__file__)).replace("\\", "/")+"/static"
+PATH_OBJECT = pathlib.Path(PATH)
 HOSTNAME = None
 SERVICENAME = None
 
@@ -27,11 +29,6 @@ def store_hostname():
     if SERVICENAME ==None:
         SERVICENAME = request.host.split(":")[0]
     
-@app.route("/")
-def index():
-    
-    return redirect(HOSTNAME+"/file?folder=")
-
 def lowermap(a:str):
     return a.lower()
 
@@ -62,7 +59,6 @@ def GreedUnit(type,name,link,last_mod="——",size="——"):
         </a>
         """    
         return res
-
 def GetPrev(folder):
     return '/'.join(folder)
 
@@ -81,11 +77,11 @@ def search_by_name(search_path:str,query:str, host:str) -> list:
     return l
 
 @cache.cached(timeout=300, key_prefix="file_list")
-@app.route("/file")
-def dumay():
+@app.route("/")
+def index():
         search = request.args.get('search')
         if search!=None:
-            search_results = search_by_name(PATH,search,HOSTNAME+"/file?folder=/")
+            search_results = search_by_name(PATH,search,HOSTNAME+"?folder=/")
             theme = request.cookies.get('theme', 'dark') 
             links=[]
             for i in range(len(search_results)):
@@ -104,9 +100,15 @@ def dumay():
         f_req = ""
         
         Req_URL = request.url.rstrip('/')
+        
+        if folder!=None and len(folder)>0 and folder[0]!="/":
+            return redirect(f"{HOSTNAME}?folder=/{folder}")
 
         links = []
         pat+=folder or ""
+        
+        if pathlib.Path(pat).is_relative_to(PATH_OBJECT)==False:
+            abort(403)
         if folder==None:
             f_req = "?folder="
         if path.isfile(pat):
@@ -179,6 +181,7 @@ def dumay():
 
 #FOR TEST
 if __name__ == '__main__':
+   
     app.run(debug=True, host='localhost', port=5000)
     
 
