@@ -1,9 +1,16 @@
+<p align="center">
+<img src="https://github.com/Kerimniy/FlaskDirLister/blob/main/for_readme/full-logo.webp" alt="logo" width="66%">
+</p>
 
----
+
 
 # FlaskDirLister
 
 **FlaskDirLister** is a lightweight web application built with Python and Flask that provides an interface for browsing the contents of directories on a server. The project allows displaying files and folders with sorting, icons, and basic navigation, and supports customization of the starting directory and service name.
+
+<p align="center">
+<img src="https://github.com/Kerimniy/FlaskDirLister/blob/main/for_readme/preview.png" alt="logo" width="90%">
+</p>
 
 ### Key Features
 - Browse directory contents.
@@ -68,15 +75,12 @@ FlaskDirLister/
 ```
 
 ### Deployment
-- For local deployment, use `gunicorn`:
+- For deployment, use `gunicorn`:
   ```bash
   pip install gunicorn
   gunicorn -w 4 -b 0.0.0.0:8000 app:app
   ```
-- For cloud deployment (Heroku, Render), follow the platform's instructions and add a `Procfile`:
-  ```
-  web: gunicorn app:app
-  ```
+
 
 ### Contribution
 Contributions are welcome! Create issues or pull requests on GitHub. Possible improvements include:
