@@ -2,7 +2,7 @@
 <img src="https://github.com/Kerimniy/FlaskDirLister/blob/main/for_readme/full-logo.webp" alt="logo" width="66%">
 </p>
 
-
+**На русском тута ->** <a href="https://github.com/Kerimniy/FlaskDirLister/blob/main/README-RU.md">тык</a>
 
 # FlaskDirLister
 
