@@ -2,6 +2,7 @@
 <img src="https://github.com/Kerimniy/FlaskDirLister/blob/main/for_readme/full-logo.webp" alt="logo" width="66%">
 </p>
 
+**In English here ->** <a href="https://github.com/Kerimniy/FlaskDirLister/blob/main/README.md">click</a>
 
 # FlaskDirLister
 
