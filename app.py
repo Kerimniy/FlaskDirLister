@@ -160,7 +160,7 @@ def index():
         splitted_url = Req_URL.split("/")
         
         dirs = []
-        current_dir = f"{splitted_url[0]}//{splitted_url[2]}/{splitted_url[3]}"
+        current_dir = f"{splitted_url[0]}//{splitted_url[2]}"
         dirs.append(f"""<a  style="color: #fdfeff !important;" href={current_dir}>home</a>""")
         for i in range(4, len(splitted_url)):
             current_dir+=f"/{splitted_url[i]}"
