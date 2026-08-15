@@ -12,7 +12,8 @@ import {
   Video,
   Signpost,
   UserRound,
-  Plus
+  Plus,
+  XIcon
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,7 +30,7 @@ import { Link } from "react-router";
 const mainItems = [
   { title: "Home", icon: Home, link: "/" },
   { title: "Route Rules", icon: Signpost, link: "/" },
-  { title: "Create", icon: Plus , link: "/.@/create"},
+  { title: "Create", icon: Plus, link: "/.@/create" },
 
   { title: "Account", icon: UserRound, link: "/.@/account" },
 ];
@@ -40,8 +41,20 @@ export function AppSidebar() {
   return (
     <Sidebar variant="inset">
       <SidebarContent>
+
         <SidebarGroup>
-          <SidebarGroupLabel>Навигация</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="flex flex-row">
+              <div className="flex flex-col justify-center items-center ">
+                <XIcon className="w-[2rem] h-[2rem]"></XIcon>
+              </div>
+              <div className="text-2xl font-semibold">Dirlist</div>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (

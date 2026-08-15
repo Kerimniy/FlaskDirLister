@@ -69,7 +69,9 @@ export function FileList({ files, page, onEdit, onDelete, onRename }: FileListPr
   const [checkAll, setCheckAll] = useState(false)
 
   const [checkCount, setCheckCount] = useState(0)
-const [newName, setNewName] = useState("")
+  
+  const [newName, setNewName] = useState("")
+
 
   if (files === null) {
     return (
@@ -224,7 +226,7 @@ const [newName, setNewName] = useState("")
                       <Button variant="ghost" className="p-1">
 
                         <AlertDialog>
-                          <AlertDialogTrigger onClick={()=>setNewName(file.fullName)} render={<span title="rename">
+                          <AlertDialogTrigger onClick={() => setNewName(file.fullName)} render={<span title="rename">
                             Rename
                           </span>}>
                           </AlertDialogTrigger>
@@ -233,10 +235,10 @@ const [newName, setNewName] = useState("")
                               <AlertDialogTitle>Rename</AlertDialogTitle>
                               <AlertDialogDescription className="w-full">
                                 <div className="flex flex-col gap-4 w-full">
-                                  
+
                                   <p className="text-center w-full">This action cannot be undone.</p>
 
-                                  <Input value={newName} onInput={(e)=>{setNewName(e.currentTarget.value)}} className="w-full" placeholder="New filename" />
+                                  <Input value={newName} onInput={(e) => { setNewName(e.currentTarget.value) }} className="w-full" placeholder="New filename" />
 
                                 </div>
                               </AlertDialogDescription>

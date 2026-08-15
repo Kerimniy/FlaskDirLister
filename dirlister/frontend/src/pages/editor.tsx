@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Save, Search, Replace, FileCode2, Loader2, HomeIcon } from "lucide-react";
-
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 
 const languageMap: Record<string, string> = {
@@ -77,7 +78,7 @@ export default function EditPage() {
     useEffect(() => {
 
         let pageParam = searchParams.get("page") || ""
-        
+
         setPageParam(pageParam)
         let _ = pageParam.split("/")
         setFilename(_[_.length - 1] || "")
@@ -165,65 +166,74 @@ export default function EditPage() {
     }
 
     return (
-        <div className="flex flex-col w-full h-[100vh] min-h-[500px] border rounded-md shadow-sm overflow-hidden bg-background">
 
-            <div className="flex flex-col sm:flex-row items-center justify-between p-2 gap-2 border-b bg-muted/40">
+        <SidebarProvider className="w-full">
+            <AppSidebar />
 
-                <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
-                    <Link to="/"><HomeIcon className="hidden sm:block w-4 h-4 text-muted-foreground ml-1" /></Link>
-                    <FileCode2 className="hidden sm:block w-4 h-4 text-muted-foreground ml-1" />
-                    <div className="h-8 flex flex-row items-center">{pathname}</div>
-                    <Input
-                        value={filename}
-                        onChange={(e) => setFilename(e.target.value)}
-                        className="h-8 bg-background max-w-full sm:max-w-[250px]"
-                        placeholder="File name..."
-                    />
+            <SidebarInset className="min-w-0">
+
+
+                <div className="flex flex-col min-h-[500px] border rounded-md shadow-sm overflow-hidden bg-background">
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between p-2 gap-2 border-b bg-muted/40">
+
+                        <div className="flex items-center gap-2 sm:w-auto flex-1">
+                            <SidebarTrigger className="ml-1 text-muted-foreground" />
+                            <FileCode2 className="hidden sm:block w-4 h-4 text-muted-foreground ml-1" />
+                            <div className="h-8 flex flex-row items-center">{pathname}</div>
+                            <Input
+                                value={filename}
+                                onChange={(e) => setFilename(e.target.value)}
+                                className="h-8 bg-background max-w-full sm:max-w-[250px]"
+                                placeholder="File name..."
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1.5 w-full sm:w-auto">
+                            <Button variant="outline" size="sm" onClick={handleSearch} className="h-8 px-2 sm:px-3" title="Search (Ctrl+F)">
+                                <Search className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Search</span>
+                            </Button>
+
+                            <Button variant="outline" size="sm" onClick={handleReplace} className="h-8 px-2 sm:px-3" title="Replace (Ctrl+H)">
+                                <Replace className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Replace</span>
+                            </Button>
+
+                            <Button size="sm" onClick={handleSave} disabled={isSaving} className="h-8 px-2 sm:px-3 min-w-[40px] sm:min-w-[110px]">
+                                {isSaving ? (
+                                    <Loader2 className="w-4 h-4 animate-spin sm:mr-2" />
+                                ) : (
+                                    <Save className="w-4 h-4 sm:mr-2" />
+                                )}
+                                <span className="hidden sm:inline">
+                                    {isSaving ? "Saving..." : "Save"}
+                                </span>
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex-grow relative">
+                        <Editor
+                            onMount={handleEditorDidMount}
+                            height="100vh"
+                            width="auto"
+                            language={editorLanguage}
+                            theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
+                            value={content}
+                            onChange={(value) => setContent(value || "")}
+                            options={{
+                                minimap: { enabled: false },
+                                fontSize: 14,
+                                wordWrap: "on",
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                                padding: { top: 12, bottom: 12 }
+                            }}
+                        />
+                    </div>
                 </div>
-
-                <div className="flex items-center justify-end gap-1.5 w-full sm:w-auto">
-                    <Button variant="outline" size="sm" onClick={handleSearch} className="h-8 px-2 sm:px-3" title="Search (Ctrl+F)">
-                        <Search className="w-4 h-4 sm:mr-2" />
-                        <span className="hidden sm:inline">Search</span>
-                    </Button>
-
-                    <Button variant="outline" size="sm" onClick={handleReplace} className="h-8 px-2 sm:px-3" title="Replace (Ctrl+H)">
-                        <Replace className="w-4 h-4 sm:mr-2" />
-                        <span className="hidden sm:inline">Replace</span>
-                    </Button>
-
-                    <Button size="sm" onClick={handleSave} disabled={isSaving} className="h-8 px-2 sm:px-3 min-w-[40px] sm:min-w-[110px]">
-                        {isSaving ? (
-                            <Loader2 className="w-4 h-4 animate-spin sm:mr-2" />
-                        ) : (
-                            <Save className="w-4 h-4 sm:mr-2" />
-                        )}
-                        <span className="hidden sm:inline">
-                            {isSaving ? "Saving..." : "Save"}
-                        </span>
-                    </Button>
-                </div>
-            </div>
-
-            <div className="flex-grow w-full relative">
-                <Editor
-                    onMount={handleEditorDidMount}
-                    height="120vh"
-                    width="100%"
-                    language={editorLanguage}
-                    theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
-                    value={content}
-                    onChange={(value) => setContent(value || "")}
-                    options={{
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        wordWrap: "on",
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                        padding: { top: 12, bottom: 12 }
-                    }}
-                />
-            </div>
-        </div>
+            </SidebarInset>
+        </SidebarProvider>
     );
 }

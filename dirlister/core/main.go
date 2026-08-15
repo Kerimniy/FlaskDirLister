@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -20,7 +20,9 @@ type Admin struct {
 	Email string
 }
 
-var AppConf = Config{ExposingDir: "/home/kerimniy/Dev/dirlister/core/x/", SearchResultCount: 15}
+// /home/kerimniy/Dev/dirlister/core/x/
+
+var AppConf = Config{}
 var admin Admin
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -46,6 +48,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	count, err := strconv.Atoi(os.Getenv("SEARCH_RESULT_COUNT"))
+
+	if err != nil {
+		log.Fatal("ERROR 57 (get count) ", err)
+	}
+
+	AppConf = Config{ExposingDir: os.Getenv("EXPDIR"), SearchResultCount: count}
 
 	InitSecretKey()
 	init_db()
@@ -74,14 +84,14 @@ func main() {
 	mux.HandleFunc("/manage/delete", deleteHandle)
 	mux.HandleFunc("/manage/rename", renameHandle)
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, "204") })
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, os.Getenv("FRONTEND"), 308) })
 
-	fmt.Println("Listening at", os.Getenv("HOST"))
+	fmt.Println("Listening at: ", os.Getenv("HOST"))
 
-	err = http.ListenAndServeTLS(os.Getenv("HOST"), "/home/kerimniy/localhost+2.pem", "/home/kerimniy/localhost+2-key.pem", corsMiddleware(mux))
+	err = http.ListenAndServeTLS(os.Getenv("HOST"), os.Getenv("CERT"), os.Getenv("KEY"), corsMiddleware(mux))
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(0, err)
 	}
 
 }

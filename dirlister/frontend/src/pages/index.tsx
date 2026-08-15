@@ -181,7 +181,7 @@ export default function IndexPage() {
         <AppHeader
           user={user}
           onLoginClick={() => console.log("login")}
-          onProfileClick={() => console.log("profile")}
+          onProfileClick={() => navigate("/.@/account")}
         />
 
 
@@ -190,16 +190,17 @@ export default function IndexPage() {
 
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Мои файлы</h1>
+              <h1 className="text-2xl font-bold tracking-tight">Files</h1>
 
             </div>
             <Button>
+              <Link className="flex-row flex justify-center items-center" to="/.@/create">
               <Plus className="mr-2 h-4 w-4" />
-              Новый файл
+                New File</Link>
             </Button>
           </div>
 
-          <div className="mb-3">
+          <div className="mb-3 flex flex-row justify-between">
 
             <Select value={sortBy} onValueChange={(e) => { localStorage.setItem("sortBy", e); setFiles(sortFilesBy(files, e)); setSortBy(e) }}>
               <SelectTrigger className="w-[240px]">
@@ -226,6 +227,7 @@ export default function IndexPage() {
               </SelectContent>
             </Select>
 
+<Button className="opacity-0" variant="destructive">Delete all</Button>
           </div>
 
           <Card className="overflow-auto p-2 md:p-3 mb-3 flex flex-row justify-start align-center">

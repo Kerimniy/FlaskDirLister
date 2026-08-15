@@ -26,9 +26,14 @@ type SearchResponse struct {
 
 func initSearch() {
 
-	db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&File{})
+	err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&File{}).Error
 
-	err := filepath.WalkDir(AppConf.ExposingDir, func(path string, d os.DirEntry, err error) error {
+	if err != nil {
+		log.Fatal("ERROR 29 (clean search db) ", err)
+	}
+
+	err = filepath.WalkDir(AppConf.ExposingDir, func(path string, d os.DirEntry, err error) error {
+
 		if err != nil {
 			return err
 		}
@@ -53,7 +58,7 @@ func initSearch() {
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("ERROR 001 ", err)
 	}
 
 }

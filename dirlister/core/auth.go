@@ -67,9 +67,9 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	err := db.Where("email= ?", email).First(&user).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		w.WriteHeader(200)
+		w.WriteHeader(401)
 
-		_, err := io.WriteString(w, "no-user")
+		_, err := io.WriteString(w, "unauthorized")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -234,21 +234,25 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			w.WriteHeader(400)
+
+			_, err := io.WriteString(w, "User does not exist or invalid password")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			return
 		}
 
 		if res.Error != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		_, err := io.WriteString(w, "User does not exist or invalid password")
-		if err != nil {
-			fmt.Println(err)
-		}
-		return
+
 	}
 	verified := checkPassword(qres.Password, payload.Password)
 
 	if !verified {
+
 		w.WriteHeader(400)
 		_, err := io.WriteString(w, "User does not exist or invalid password")
 		if err != nil {
