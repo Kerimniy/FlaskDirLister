@@ -59,14 +59,15 @@ interface FileListProps {
   onEdit: (file: FileItem) => void;
   onDelete: (file: FileItem) => void;
   onRename: (file: FileItem, newName: string) => void;
+  setCheckAll: React.Dispatch<React.SetStateAction<boolean>>;
+  checkAll: boolean
 }
 
-export function FileList({ files, page, onEdit, onDelete, onRename }: FileListProps) {
+export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, setCheckAll }: FileListProps) {
 
   const navigate = useNavigate();
 
   const [checks, setChecks] = useState({})
-  const [checkAll, setCheckAll] = useState(false)
 
   const [checkCount, setCheckCount] = useState(0)
   

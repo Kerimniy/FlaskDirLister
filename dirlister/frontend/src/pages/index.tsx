@@ -74,7 +74,7 @@ export default function IndexPage() {
   const [page, setPage] = useState<number>(Number(pageParam) || 0);
 
 
-
+  const [checkAll, setCheckAll] = useState(false)
 
   const leftArrowPageButton = useRef(null)
   const rightArrowPageButton = useRef(null)
@@ -195,9 +195,10 @@ export default function IndexPage() {
             </div>
             <Button>
               <Link className="flex-row flex justify-center items-center" to="/.@/create">
-              <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
                 New File</Link>
             </Button>
+       
           </div>
 
           <div className="mb-3 flex flex-row justify-between">
@@ -227,7 +228,7 @@ export default function IndexPage() {
               </SelectContent>
             </Select>
 
-<Button className="opacity-0" variant="destructive">Delete all</Button>
+            <Button className="opacity-0" variant="destructive">Delete all</Button>
           </div>
 
           <Card className="overflow-auto p-2 md:p-3 mb-3 flex flex-row justify-start align-center">
@@ -248,6 +249,8 @@ export default function IndexPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onRename={handleRename}
+              checkAll={checkAll}
+              setCheckAll={setCheckAll}
             />
           </div>
           {(files !== null && files !== undefined) &&
