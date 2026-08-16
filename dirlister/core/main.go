@@ -82,9 +82,13 @@ func main() {
 
 	mux.HandleFunc("/manage/upload", uploadHandle)
 	mux.HandleFunc("/manage/delete", deleteHandle)
+	mux.HandleFunc("/manage/delete-all", deleteAllHandle)
 	mux.HandleFunc("/manage/rename", renameHandle)
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, os.Getenv("FRONTEND"), 308) })
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", "no-store")
+		w.Write([]byte("hffhdfh"))
+	})
 
 	fmt.Println("Listening at: ", os.Getenv("HOST"))
 

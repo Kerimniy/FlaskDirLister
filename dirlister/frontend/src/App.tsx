@@ -44,7 +44,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
         else if (r.status===401){
-          navigate("/.@/auth/login")
         }
         return null;
       })

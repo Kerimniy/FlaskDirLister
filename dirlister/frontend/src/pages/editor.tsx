@@ -112,10 +112,11 @@ export default function EditPage() {
 
             setIsSaving(true);
             try {
-                const response = await fetch(`${BACKEND_BASE_URL}/manage/upload?file=${filename}&edit=true`, {
+                const response = await fetch(`${BACKEND_BASE_URL}/manage/upload?file=${filename}&edit=false`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ newName: "", content: content }),
+                    body: content ,
+                    credentials: "include"
                 });
 
                 if (!response.ok) throw new Error("Save failed");
@@ -139,7 +140,8 @@ export default function EditPage() {
                 const response = await fetch(`${BACKEND_BASE_URL}/manage/upload?file=${pageParam}&edit=true`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ newName: pathname + filename, content: content }),
+                    body: JSON.stringify({ newName: (pathname + filename), content: content }),
+                    credentials: "include"
                 });
 
                 if (!response.ok) throw new Error("Save failed");

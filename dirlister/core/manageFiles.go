@@ -16,6 +16,7 @@ type uploadData struct {
 }
 
 func uploadHandle(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("75", getSignedCookie(r, w))
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -116,6 +117,16 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		_, err = io.WriteString(file, payload.Content)
+
+		if err != nil {
+			fmt.Println(err)
+
+			w.WriteHeader(500)
+			return
+		}
+		file.Close()
+
 		if newPath != "" {
 			err = os.Rename(path, newPath)
 
@@ -126,17 +137,6 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-		}
-
-		defer file.Close()
-
-		_, err = io.WriteString(file, payload.Content)
-
-		if err != nil {
-			fmt.Println(err)
-
-			w.WriteHeader(500)
-			return
 		}
 
 	}
@@ -172,6 +172,55 @@ func deleteHandle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+}
+
+func deleteAllHandle(w http.ResponseWriter, r *http.Request) {
+
+	if !checkAdmin(w, r) {
+		w.WriteHeader(403)
+		return
+	}
+
+	filenames := []string{}
+
+	b, e := io.ReadAll(r.Body)
+
+	if e != nil {
+		w.WriteHeader(500)
+		return
+	}
+
+	err := json.Unmarshal(b, &filenames)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, filename := range filenames {
+
+		path := filepath.Join(AppConf.ExposingDir, filename)
+
+		rel, err := filepath.Rel(AppConf.ExposingDir, path)
+
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+
+		if strings.HasPrefix(rel, "..") {
+
+			w.WriteHeader(400)
+			return
+		}
+
+		err = os.RemoveAll(path)
+		if err != nil {
+			w.WriteHeader(500)
+			io.WriteString(w, filename)
+			return
+		}
+	}
+
 }
 
 func renameHandle(w http.ResponseWriter, r *http.Request) {

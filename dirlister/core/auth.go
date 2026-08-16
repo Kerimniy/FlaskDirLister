@@ -39,11 +39,14 @@ type Login struct {
 }
 
 func checkAdmin(w http.ResponseWriter, r *http.Request) bool {
+
 	fmt.Println(getSignedCookie(r, w), admin.Email)
 	return getSignedCookie(r, w) == admin.Email
 }
 
 func getUser(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("77", getSignedCookie(r, w))
 
 	if r.Header.Get("Origin") != os.Getenv("FRONTEND") {
 		w.WriteHeader(403)
@@ -60,9 +63,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	email := getSignedCookie(r, w)
-
-	fmt.Println(email, 1)
-
+	fmt.Println("11", email)
 	user := User{}
 	err := db.Where("email= ?", email).First(&user).Error
 

@@ -75,6 +75,8 @@ export default function IndexPage() {
 
 
   const [checkAll, setCheckAll] = useState(false)
+  const [checks, setChecks] = useState({})
+
 
   const leftArrowPageButton = useRef(null)
   const rightArrowPageButton = useRef(null)
@@ -120,6 +122,31 @@ export default function IndexPage() {
     fetch(`${BACKEND_BASE_URL}/manage/delete?file=${file.fullName}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
+    }).then((res) => {
+      console.log("Deletion status: ", res.status)
+
+      if (res.ok) {
+        getFiles(location.pathname, sortBy).then((res) => {
+
+          setFiles(res);
+
+        });
+
+        setPaths(getPathBarLinks())
+      }
+    });
+
+
+
+    return
+  };
+  const handleDeleteAll = () => {
+
+    
+    fetch(`${BACKEND_BASE_URL}/manage/delete-all`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(checks)
     }).then((res) => {
       console.log("Deletion status: ", res.status)
 
@@ -228,7 +255,7 @@ export default function IndexPage() {
               </SelectContent>
             </Select>
 
-            <Button className="opacity-0" variant="destructive">Delete all</Button>
+            <Button onClick={handleDeleteAll} className={checkAll ? "opacity-100" : "opacity-0"} variant="destructive">Delete all</Button>
           </div>
 
           <Card className="overflow-auto p-2 md:p-3 mb-3 flex flex-row justify-start align-center">
@@ -251,6 +278,8 @@ export default function IndexPage() {
               onRename={handleRename}
               checkAll={checkAll}
               setCheckAll={setCheckAll}
+              checks={checks}
+              setChecks={setChecks}
             />
           </div>
           {(files !== null && files !== undefined) &&
