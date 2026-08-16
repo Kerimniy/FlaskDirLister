@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+import { Trash2 } from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +38,18 @@ import { Input } from "@/components/ui/input";
 import { RESULTS_PER_PAGE, useAuth } from "@/App";
 
 import { BACKEND_BASE_URL } from "@/App";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface PathEl {
   name: string,
@@ -146,11 +160,11 @@ export default function IndexPage() {
   };
   const handleDeleteAll = () => {
 
-    
+
     fetch(`${BACKEND_BASE_URL}/manage/delete-all`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Array.of(checksList)),
+      body: JSON.stringify(Array.from(checksList)),
       credentials: "include"
     }).then((res) => {
       console.log("Deletion status: ", res.status)
@@ -232,7 +246,7 @@ export default function IndexPage() {
                 <Plus className="mr-2 h-4 w-4" />
                 New File</Link>
             </Button>
-       
+
           </div>
 
           <div className="mb-3 flex flex-row justify-between">
@@ -262,7 +276,28 @@ export default function IndexPage() {
               </SelectContent>
             </Select>
 
-            <Button onClick={()=>{handleDeleteAll()}} className={(checkCount)>1 ? "opacity-100" : "opacity-0"} variant="destructive">Delete all</Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger render={<Button variant="destructive" title="delete" className={(checkCount) > 1 ? "opacity-100" : "opacity-0"}>
+                <Trash2></Trash2>
+                Delete All
+              </Button>}>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel variant="default" onClick={() => handleDeleteAll()}>Continue</AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+
           </div>
 
           <Card className="overflow-auto p-2 md:p-3 mb-3 flex flex-row justify-start align-center">
@@ -285,7 +320,7 @@ export default function IndexPage() {
               onRename={handleRename}
               checkAll={checkAll}
               setCheckAll={setCheckAll}
-             
+
               setCheckList={setChecksList}
               checkList={checksList}
               checkCount={checkCount}

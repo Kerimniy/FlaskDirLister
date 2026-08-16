@@ -194,6 +194,8 @@ func deleteAllHandle(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Println(err)
+		w.WriteHeader(500)
+		return
 	}
 
 	for _, filename := range filenames {
