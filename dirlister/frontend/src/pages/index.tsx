@@ -76,6 +76,8 @@ export default function IndexPage() {
 
   const [checkAll, setCheckAll] = useState(false)
   const [checks, setChecks] = useState({})
+  const [checksList, setChecksList] = useState(new Set<string>)
+  const [checkCount, setCheckCount] = useState(0)
 
 
   const leftArrowPageButton = useRef(null)
@@ -122,6 +124,8 @@ export default function IndexPage() {
     fetch(`${BACKEND_BASE_URL}/manage/delete?file=${file.fullName}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
+      credentials: "include"
+
     }).then((res) => {
       console.log("Deletion status: ", res.status)
 
@@ -146,7 +150,8 @@ export default function IndexPage() {
     fetch(`${BACKEND_BASE_URL}/manage/delete-all`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(checks)
+      body: JSON.stringify(Array.of(checksList)),
+      credentials: "include"
     }).then((res) => {
       console.log("Deletion status: ", res.status)
 
@@ -175,6 +180,8 @@ export default function IndexPage() {
 
     fetch(`${BACKEND_BASE_URL}/manage/rename?file=${file.fullName}`, {
       method: "PATCH",
+      credentials: "include"
+
     }).then((res) => {
       console.log("Rename status: ", res.status)
 
@@ -255,7 +262,7 @@ export default function IndexPage() {
               </SelectContent>
             </Select>
 
-            <Button onClick={handleDeleteAll} className={checkAll ? "opacity-100" : "opacity-0"} variant="destructive">Delete all</Button>
+            <Button onClick={()=>{handleDeleteAll()}} className={(checkCount)>1 ? "opacity-100" : "opacity-0"} variant="destructive">Delete all</Button>
           </div>
 
           <Card className="overflow-auto p-2 md:p-3 mb-3 flex flex-row justify-start align-center">
@@ -278,8 +285,11 @@ export default function IndexPage() {
               onRename={handleRename}
               checkAll={checkAll}
               setCheckAll={setCheckAll}
-              checks={checks}
-              setChecks={setChecks}
+             
+              setCheckList={setChecksList}
+              checkList={checksList}
+              checkCount={checkCount}
+              setCheckCount={setCheckCount}
             />
           </div>
           {(files !== null && files !== undefined) &&

@@ -3,7 +3,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState, useRef } from "react";
 import type * as Monaco from "monaco-editor";
 import { useSearchParams, useLocation, Link, useNavigate } from "react-router";
-import { BACKEND_BASE_URL } from "@/App";
+import { BACKEND_BASE_URL, useAuth } from "@/App";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,7 @@ export default function EditPage() {
 
     const [fileExtension, setFileExtension] = useState(filename.split(".").pop()?.toLowerCase() || "");
     const [editorLanguage, setEditorLanguage] = useState(languageMap[fileExtension] || "plaintext");
+    const { user, updateUser } = useAuth();
 
 
     const handleEditorDidMount: OnMount = (editor, monaco) => {
@@ -76,6 +77,11 @@ export default function EditPage() {
     };
 
     useEffect(() => {
+
+
+        if (user===null || user===undefined || user.email===""){
+            navigate("/.@/auth/login")
+        }
 
         let pageParam = searchParams.get("page") || ""
 

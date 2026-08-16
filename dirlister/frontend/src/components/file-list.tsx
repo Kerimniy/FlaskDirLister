@@ -61,17 +61,20 @@ interface FileListProps {
   onRename: (file: FileItem, newName: string) => void;
   setCheckAll: React.Dispatch<React.SetStateAction<boolean>>;
   checkAll: boolean
-  setChecks: React.Dispatch<React.SetStateAction<{}>>;
-  checks: {}
+
+  setCheckList: React.Dispatch<React.SetStateAction<Set<string>>>;
+  checkList: Set<string>;
+
+  checkCount: number;
+  setCheckCount: React.Dispatch<React.SetStateAction<number>> ;
 }
 
-export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, setCheckAll, checks, setChecks }: FileListProps) {
+export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, setCheckAll, setCheckList, checkList, checkCount, setCheckCount }: FileListProps) {
 
   const navigate = useNavigate();
 
 
-  const [checkCount, setCheckCount] = useState(0)
-  
+
   const [newName, setNewName] = useState("")
 
 
@@ -108,7 +111,7 @@ export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, se
       <TableHeader>
         <TableRow>
           <TableHead>
-            <Checkbox checked={checkAll} onClick={() => { let e = !checkAll; setCheckCount(e ? files.length : 0); checkAllFunc(e, files, setChecks) }} onCheckedChange={(e) => { setCheckAll(e); }} />
+            <Checkbox checked={checkAll} onClick={() => { let e = !checkAll; setCheckCount(e ? files.length : 0); checkAllFunc(e, files, setCheckList) }} onCheckedChange={(e) => { setCheckAll(e); }} />
           </TableHead>
           <TableHead className="text-center">Name</TableHead>
           <TableHead className="hidden md:table-cell text-center">Size</TableHead>
@@ -130,7 +133,7 @@ export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, se
             >
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <Checkbox id={file.fullName}
-                  checked={checks[file.fullName] || false}
+                  checked={checkList.has(file.fullName)}
                   onCheckedChange={(value) => {
 
                     if (checkCount + Number(value) * 2 - 1 == files.length) {
@@ -142,11 +145,21 @@ export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, se
 
                     setCheckCount(checkCount + Number(value) * 2 - 1);
 
+                    if (value) {
+                      setCheckList(prev => {
+                        const next = new Set(prev);
+                        next.add(file.fullName);
+                        return next;
+                      });
 
-                    setChecks(prev => ({
-                      ...prev,
-                      [file.fullName]: value
-                    }));
+                    } else {
+                      setCheckList(prev => {
+                        const next = new Set(prev);
+                        next.delete(file.fullName);
+                        return next;
+                      });
+                    }
+
                   }} />
               </TableCell>
               <TableCell>
@@ -294,11 +307,16 @@ export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, se
 }
 
 
-function checkAllFunc(e, files: FileItem[], setChecked: React.Dispatch<React.SetStateAction<{}>>) {
-  setChecked(
-    Object.fromEntries(
-      files.map(file => [file.fullName, e])
-    )
-  );
+function checkAllFunc(e, files: FileItem[], setChecked: React.Dispatch<React.SetStateAction<Set<string>>>) {
+
+  let newSet = new Set<string>()
+
+  if (e) {
+    for (let el of files) {
+      newSet.add(el.fullName)
+    }
+  }
+
+  setChecked(newSet);
 
 }
