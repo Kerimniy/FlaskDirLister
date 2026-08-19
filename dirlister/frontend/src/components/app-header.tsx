@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Link } from "react-router";
 
 interface AppHeaderProps {
   user?: {
@@ -29,11 +30,12 @@ export function AppHeader({ user, onLoginClick, onProfileClick }: AppHeaderProps
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <Link to={"/.@/upload"}>
         <Button variant="outline" size="sm" className="hidden sm:flex">
           <Upload className="mr-2 h-4 w-4" />
           Upload
         </Button>
-
+</Link>
 
         <Button
           variant="ghost"

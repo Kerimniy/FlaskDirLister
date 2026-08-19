@@ -89,7 +89,6 @@ export default function IndexPage() {
 
 
   const [checkAll, setCheckAll] = useState(false)
-  const [checks, setChecks] = useState({})
   const [checksList, setChecksList] = useState(new Set<string>)
   const [checkCount, setCheckCount] = useState(0)
 
@@ -150,6 +149,10 @@ export default function IndexPage() {
 
         });
 
+        let nchl = new Set(checksList)
+        nchl.delete(file.fullName)
+        setChecksList(nchl)
+
         setPaths(getPathBarLinks())
       }
     });
@@ -160,6 +163,7 @@ export default function IndexPage() {
   };
   const handleDeleteAll = () => {
 
+   
 
     fetch(`${BACKEND_BASE_URL}/manage/delete-all`, {
       method: "DELETE",
@@ -175,6 +179,7 @@ export default function IndexPage() {
           setFiles(res);
 
         });
+        setChecksList(new Set<string>())
 
         setPaths(getPathBarLinks())
       }
