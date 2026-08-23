@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 type Config struct {
 	ExposingDir       string
 	SearchResultCount int
+	UploadLimit       int
 }
 
 type Admin struct {
@@ -55,7 +57,13 @@ func main() {
 		log.Fatal("ERROR 57 (get count) ", err)
 	}
 
-	AppConf = Config{ExposingDir: os.Getenv("EXPDIR"), SearchResultCount: count}
+	_upload_limit, err := strconv.Atoi(os.Getenv("UPLOAD_LIMIT"))
+
+	if err != nil {
+		log.Fatal("ERROR 62 (get limit) ", err)
+	}
+
+	AppConf = Config{ExposingDir: os.Getenv("EXPDIR"), SearchResultCount: count, UploadLimit: _upload_limit}
 
 	InitSecretKey()
 	init_db()
@@ -79,11 +87,15 @@ func main() {
 
 	mux.HandleFunc("/rules/create", createRule)
 	mux.HandleFunc("/rules/delete", deleteRule)
+	mux.HandleFunc("/rules/get", getRules)
 
 	mux.HandleFunc("/manage/upload", uploadHandle)
+	mux.HandleFunc("/manage/upload-multiple", uploadMultipleHandle)
 	mux.HandleFunc("/manage/delete", deleteHandle)
 	mux.HandleFunc("/manage/delete-all", deleteAllHandle)
 	mux.HandleFunc("/manage/rename", renameHandle)
+
+	mux.HandleFunc("/info/upload-limit", func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, strconv.Itoa(AppConf.UploadLimit)) })
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", "no-store")

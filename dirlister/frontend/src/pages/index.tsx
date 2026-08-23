@@ -232,8 +232,6 @@ export default function IndexPage() {
 
       <SidebarInset className="flex flex-col min-w-0">
         <AppHeader
-          user={user}
-          onLoginClick={() => console.log("login")}
           onProfileClick={() => navigate("/.@/account")}
         />
 

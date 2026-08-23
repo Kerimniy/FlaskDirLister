@@ -107,7 +107,7 @@ export async function getFiles(folder: string, dim: string): Promise<FileItem[]>
     }
   }
   catch(err){
-    console.log(err, "dd")
+    console.log(err)
       return null
   }
   const result = await response.json();

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -103,4 +104,51 @@ func deleteRule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rulesTree.Tree.Delete(payload.Pattern)
+}
+
+func getRules(w http.ResponseWriter, r *http.Request) {
+
+	page, err := strconv.Atoi(r.URL.Query().Get("p"))
+
+	if err != nil || page < 1 {
+
+		w.WriteHeader(400)
+		io.WriteString(w, "invalid page param")
+		return
+	}
+
+	rulesList := []string{}
+
+	page -= 1
+
+	offset := page * AppConf.SearchResultCount
+
+	var i = 0
+
+	rulesTree.Tree.Walk(func(s string, v interface{}) bool {
+		i++
+		if i <= offset {
+			return false
+		} else if i <= offset+AppConf.SearchResultCount {
+
+			rulesList = append(rulesList, s)
+
+			return false
+		} else {
+			return true
+		}
+
+	})
+
+	b, err := json.Marshal(rulesList)
+
+	if err != nil {
+		fmt.Println("rules.go:143", err)
+		w.WriteHeader(500)
+		return
+	}
+
+	_, err = w.Write(b)
+
+	fmt.Println(err)
 }

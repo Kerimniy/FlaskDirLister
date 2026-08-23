@@ -16,7 +16,6 @@ type uploadData struct {
 }
 
 func uploadHandle(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("75", getSignedCookie(r, w))
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -252,4 +251,69 @@ func CreateFile(path string) (*os.File, error) {
 	}
 
 	return os.Create(path)
+}
+
+func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != "POST" {
+		w.WriteHeader(405)
+		return
+	}
+
+	if !checkAdmin(w, r) {
+		w.WriteHeader(403)
+		return
+	}
+
+	dir := r.URL.Query().Get("dir")
+
+	err := r.ParseMultipartForm(int64(AppConf.UploadLimit))
+	if err != nil {
+		w.WriteHeader(500)
+		io.WriteString(w, "Parse form error:"+err.Error())
+		return
+	}
+	files := r.MultipartForm.File["files"]
+
+	for _, file := range files {
+		f, err := file.Open()
+
+		if err != nil {
+			w.WriteHeader(500)
+			io.WriteString(w, "00 Couldn't load file:"+file.Filename)
+			return
+		}
+
+		defer f.Close()
+
+		fullDir := filepath.Join(AppConf.ExposingDir, dir)
+		fullName := filepath.Join(fullDir, file.Filename)
+
+		err = os.MkdirAll(fullDir, os.ModePerm)
+
+		if err != nil {
+			w.WriteHeader(500)
+			io.WriteString(w, "03 Couldn't load file:"+file.Filename)
+			return
+		}
+
+		newFile, err := os.Create(fullName)
+
+		if err != nil {
+			w.WriteHeader(500)
+			io.WriteString(w, "01 Couldn't load file:"+file.Filename)
+			return
+		}
+
+		_, err = io.Copy(newFile, f)
+
+		defer newFile.Close()
+
+		if err != nil {
+			w.WriteHeader(500)
+			io.WriteString(w, "02 Couldn't load file:"+file.Filename)
+			return
+		}
+
+	}
 }

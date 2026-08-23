@@ -16,14 +16,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { formatFileSize } from "@/lib/files";
 import { BACKEND_BASE_URL } from "@/App";
 export default function FileUpload() {
 
     const fileLimit = 10
-    const maxSize = 2 * 1024
+    let maxSize = 0
+
+    fetch(`${BACKEND_BASE_URL}/info/upload-limit`).then(r=>{
+       return r.text()
+    }).then(t=>{maxSize=Number(t)})
+
+    const [searchParams, setSearchParams] = useSearchParams()
+    const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
     const [size, setSize] = useState(0);
     const [isLimitExeeded, setIsLimitExeeded] = useState(false);
@@ -122,14 +129,15 @@ export default function FileUpload() {
         });
 
         try {
-            const response = await fetch(`${BACKEND_BASE_URL}/manage/upload-multiple`, {
+            const response = await fetch(`${BACKEND_BASE_URL}/manage/upload-multiple?dir=${searchParams.get("dir")}`, {
                 method: "POST",
                 body: formData,
                 credentials: "include"
             });
 
-            if (!response.ok) throw new Error("Save failed");
+            if (!response.ok) { setStatusMessage({ text: `Error status code: ${response.status}`, isError: true }); throw new Error("Save failed")};
 
+            setStatusMessage({text:"Successfuly saved", isError: false})
             console.log("Saved");
 
             setFiles([]);
@@ -145,9 +153,16 @@ export default function FileUpload() {
 
             <SidebarInset className="min-w-0">
                 <AppHeader
-                    onLoginClick={() => console.log("login")}
                     onProfileClick={() => navigate("/.@/account")}
                 />
+                {statusMessage && (
+                    <div className={`p-3 rounded-md text-sm font-medium border max-w-sm w-full text-center ${statusMessage.isError
+                        ? 'bg-destructive/10 text-destructive border-destructive/20'
+                        : 'bg-green-500/10 text-green-600 border-green-500/20'
+                        }`}>
+                        {statusMessage.text}
+                    </div>
+                )}
 
                 <div className="p-6">
                     <Card className="mt-6">

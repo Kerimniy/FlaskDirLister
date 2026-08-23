@@ -89,7 +89,7 @@ func getDirHandle(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			w.WriteHeader(404)
+			w.WriteHeader(204)
 			return
 		} else {
 			w.WriteHeader(500)
