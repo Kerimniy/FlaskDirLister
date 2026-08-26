@@ -30,7 +30,7 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-export function formatDate(iso: string, f: FileItem): string {
+export function formatDate(iso: string): string {
 
   const date = new Date(iso);
   return new Intl.DateTimeFormat("ru-RU", {
@@ -116,7 +116,7 @@ export async function getFiles(folder: string, dim: string): Promise<FileItem[]>
   let files: FileItem[] = []
   for (let el of result) {
 
-    files.push({ name: el.name, type: el.type, size: el.size, mimeType: mime.getType(el.name), modifiedAt: formatDate(el.modTime, el), fullName: el.fullName })
+    files.push({ name: el.name, type: el.type, size: el.size, mimeType: mime.getType(el.name), modifiedAt: formatDate(el.modTime), fullName: el.fullName })
 
   }
 

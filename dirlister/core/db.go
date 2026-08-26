@@ -35,7 +35,8 @@ func init_db() {
 
 	for _, rule := range rules {
 
-		rulesTree.Tree.Insert(rule.Pattern, true)
+		rulesTree.Tree.Insert(rule.Path, true)
+		rulesTree.Dates[rule.Path]=rule.CreatedAt
 	}
 
 	db = _db

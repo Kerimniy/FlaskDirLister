@@ -17,6 +17,7 @@ import EditPage from './pages/editor';
 import Auth from './pages/Auth';
 import AccountPage from './pages/account';
 import FileUpload from './pages/upload';
+import RulesPage from './pages/rules';
 
 export const AuthContext = createContext<{
   user: UserStruct | null;
@@ -109,6 +110,7 @@ function App() {
           <Route path='/.@/edit' element={<EditPage />}></Route>
           <Route path='/.@/create' element={<EditPage />}></Route>
           <Route path='/.@/upload' element={<FileUpload />}></Route>
+          <Route path='/.@/rules' element={<RulesPage />}></Route>
           <Route path="/.@/auth/*" element={<Auth />}></Route>
           <Route path="/.@/account" element={<AccountPage />}></Route>
           <Route path='/*' element={<IndexPage />}></Route>

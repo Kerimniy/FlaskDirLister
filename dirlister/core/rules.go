@@ -8,18 +8,28 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/armon/go-radix"
+	"gorm.io/gorm"
 )
 
 type RulesTree struct {
-	mu   sync.RWMutex
-	Tree *radix.Tree
+	mu    sync.RWMutex
+	Tree  *radix.Tree
+	Dates map[string]time.Time
 }
 
 type Rule struct {
-	ID      int    `gorm:"primaryKey"`
-	Pattern string `gorm:"unique"`
+	gorm.Model
+	ID        int    `gorm:"primaryKey"`
+	Path      string `gorm:"unique"`
+	CreatedAt time.Time
+}
+
+type RuleResponse struct {
+	Path      string `json:"path"`
+	CreatedAt string `json:"createdAt"`
 }
 
 var rulesTree RulesTree
@@ -30,39 +40,24 @@ func createRule(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(403)
 		return
 	}
-
-	if r.Method != "POST" {
-		w.WriteHeader(405)
-		return
-	}
-
+	path := r.URL.Query().Get("p")
 	if strings.Trim(getSignedCookie(r, w), " ") == "" {
 		w.WriteHeader(403)
 		return
 	}
 
-	b, e := io.ReadAll(r.Body)
+	_time := time.Now()
 
-	if e != nil {
-		w.WriteHeader(500)
-		return
-	}
-	payload := Rule{}
-	err := json.Unmarshal(b, &payload)
+	err := db.Create(&Rule{Path: path, CreatedAt: _time}).Error
 
 	if err != nil {
 		w.WriteHeader(500)
+		fmt.Println(err)
 		return
 	}
 
-	result := db.Create(payload)
-
-	if result.Error != nil {
-		w.WriteHeader(500)
-		fmt.Println(result.Error)
-	}
-
-	rulesTree.Tree.Insert(payload.Pattern, true)
+	rulesTree.Tree.Insert(path, true)
+	rulesTree.Dates[path] = _time
 }
 
 func deleteRule(w http.ResponseWriter, r *http.Request) {
@@ -103,23 +98,21 @@ func deleteRule(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(result.Error)
 	}
 
-	rulesTree.Tree.Delete(payload.Pattern)
+	rulesTree.Tree.Delete(payload.Path)
 }
 
 func getRules(w http.ResponseWriter, r *http.Request) {
 
 	page, err := strconv.Atoi(r.URL.Query().Get("p"))
 
-	if err != nil || page < 1 {
+	if err != nil || page < 0 {
 
 		w.WriteHeader(400)
 		io.WriteString(w, "invalid page param")
 		return
 	}
 
-	rulesList := []string{}
-
-	page -= 1
+	rulesList := []RuleResponse{}
 
 	offset := page * AppConf.SearchResultCount
 
@@ -131,7 +124,7 @@ func getRules(w http.ResponseWriter, r *http.Request) {
 			return false
 		} else if i <= offset+AppConf.SearchResultCount {
 
-			rulesList = append(rulesList, s)
+			rulesList = append(rulesList, RuleResponse{Path: s, CreatedAt: rulesTree.Dates[s].String()})
 
 			return false
 		} else {
@@ -149,6 +142,7 @@ func getRules(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = w.Write(b)
-
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println(err)
+	}
 }

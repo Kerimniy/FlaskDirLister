@@ -29,7 +29,7 @@ import { Link } from "react-router";
 
 const mainItems = [
   { title: "Home", icon: Home, link: "/" },
-  { title: "Route Rules", icon: Signpost, link: "/" },
+  { title: "Route Rules", icon: Signpost, link: "/.@/rules" },
   { title: "Create", icon: Plus, link: "/.@/create" },
 
   { title: "Account", icon: UserRound, link: "/.@/account" },

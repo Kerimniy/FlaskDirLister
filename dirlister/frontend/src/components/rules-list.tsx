@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useEffect, useRef, useState } from "react";
 
-export interface Rule{
+export interface Rule {
     path: string;
     createdAt: string
 }
@@ -60,9 +60,8 @@ export interface Rule{
 interface RulesListProps {
     rules: Rule[];
     page: number;
-    onEdit: (rule: Rule) => void;
-    onDelete: (rule: Rule) => void;
-    onRename: (rule: Rule, newName: string) => void;
+    onDelete: (rule: string[]) => void;
+    onChange: (rule: Rule, newPath: string) => void;
     setCheckAll: React.Dispatch<React.SetStateAction<boolean>>;
     checkAll: boolean
 
@@ -73,13 +72,13 @@ interface RulesListProps {
     setCheckCount: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export function RulesList({ rules, page, onEdit, onDelete, onRename, checkAll, setCheckAll, setCheckList, checkList, checkCount, setCheckCount }: RulesListProps) {
+export function RulesList({ rules, page, onDelete, onChange, checkAll, setCheckAll, setCheckList, checkList, checkCount, setCheckCount }: RulesListProps) {
 
     const navigate = useNavigate();
 
 
 
-    const [newName, setNewName] = useState("")
+    const [newRulePath, setNewRulePath] = useState("")
 
 
     if (rules === null) {
@@ -129,7 +128,7 @@ export function RulesList({ rules, page, onEdit, onDelete, onRename, checkAll, s
                         <TableRow
                             key={rule.path}
                             className="group"
-                            
+
                         >
                             <TableCell onClick={(e) => e.stopPropagation()}>
                                 <Checkbox id={rule.path}
@@ -164,13 +163,13 @@ export function RulesList({ rules, page, onEdit, onDelete, onRename, checkAll, s
                             </TableCell>
                             <TableCell>
                                 <div className="flex items-center gap-3">
-                                  
-                                  
+
+
                                     <div className="flex flex-col align-left">
                                         <span className="font-medium  max-w-[380px]">
                                             {rule.path}
                                         </span>
-                                  
+
                                     </div>
                                 </div>
                             </TableCell>
@@ -179,16 +178,31 @@ export function RulesList({ rules, page, onEdit, onDelete, onRename, checkAll, s
                             </TableCell>
                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1 focus-within:opacity-100">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => onEdit(rule)}
-                                        title="edit"
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                        <span className="sr-only">Edit</span>
-                                    </Button>
+
+                                    <AlertDialog>
+                                        <AlertDialogTrigger onClick={() => setNewRulePath(rule.path)} render={<span title="rename">
+                                            Change
+                                        </span>}>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Change rule</AlertDialogTitle>
+                                                <AlertDialogDescription className="w-full">
+                                                    <div className="flex flex-col gap-4 w-full">
+
+                                                        <p className="text-center w-full">This action cannot be undone.</p>
+
+                                                        <Input value={newRulePath} onInput={(e) => { setNewRulePath(e.currentTarget.value) }} className="w-full" placeholder="New rulesname" />
+
+                                                    </div>
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogCancel variant="default" onClick={() => onChange(rule, newRulePath)}>Continue</AlertDialogCancel>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
 
 
                                     <AlertDialog>
@@ -206,85 +220,14 @@ export function RulesList({ rules, page, onEdit, onDelete, onRename, checkAll, s
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogCancel variant="default" onClick={() => onDelete(rule)}>Continue</AlertDialogCancel>
+                                                <AlertDialogCancel variant="default" onClick={() => onDelete([rule.path])}>Continue</AlertDialogCancel>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
 
 
 
-                                    <Popover>
-
-                                        <PopoverTrigger>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </PopoverTrigger>
-
-                                        <PopoverContent className="w-fit" align="end">
-
-                                            <Button variant="ghost" className="p-1">
-
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger onClick={() => setNewName(rule.path)} render={<span title="rename">
-                                                        Rename
-                                                    </span>}>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Rename</AlertDialogTitle>
-                                                            <AlertDialogDescription className="w-full">
-                                                                <div className="flex flex-col gap-4 w-full">
-
-                                                                    <p className="text-center w-full">This action cannot be undone.</p>
-
-                                                                    <Input value={newName} onInput={(e) => { setNewName(e.currentTarget.value) }} className="w-full" placeholder="New rulesname" />
-
-                                                                </div>
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogCancel variant="default" onClick={() => onRename(rule, newName)}>Continue</AlertDialogCancel>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-
-                                            </Button>
-
-                                            <Button variant="ghost" className="p-1" onClick={() => { window.location.href = `${BACKEND_BASE_URL}/s/${rule.path}?open=false` }}>Download</Button>
-
-                                            <Button variant="ghost" className="p-1">
-
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger render={<span title="delete" className="text-destructive hover:text-destructive">
-                                                        Delete
-                                                    </span>}>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action cannot be undone.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogCancel variant="default" onClick={() => onDelete(rule)}>Continue</AlertDialogCancel>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-
-                                            </Button>
-
-                                        </PopoverContent>
-
-                                    </Popover>
-
+                                   
                                 </div>
                             </TableCell>
                         </TableRow>
