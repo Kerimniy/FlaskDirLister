@@ -96,11 +96,13 @@ export function getMimeColor(mimeType: string): string {
   return "text-slate-500";
 }
 
-export async function getFiles(folder: string, dim: string): Promise<FileItem[]> {
+export async function getFiles(folder: string, dim: string, setStatus: React.Dispatch<React.SetStateAction<number>>): Promise<FileItem[]> {
   const url = `${BACKEND_BASE_URL}/s/${folder.replace(/\/+$/, '')}`;
   let response
   try {
     response = await fetch(url);
+    setStatus(response.status)
+
     if (!response.ok) {
       console.log(response.status)
       return null

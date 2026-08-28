@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"sync"
+	"time"
 
 	"github.com/armon/go-radix"
 	"gorm.io/driver/sqlite"
@@ -32,11 +33,11 @@ func init_db() {
 	if res.Error != nil {
 		log.Fatal("db.go:33 ", res.Error)
 	}
-
+	rulesTree.Dates = make(map[string]time.Time)
 	for _, rule := range rules {
 
 		rulesTree.Tree.Insert(rule.Path, true)
-		rulesTree.Dates[rule.Path]=rule.CreatedAt
+		rulesTree.Dates[rule.Path] = rule.CreatedAt
 	}
 
 	db = _db

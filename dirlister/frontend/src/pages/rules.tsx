@@ -91,12 +91,17 @@ export default function RulesPage() {
 
 
     const handleDelete = (rules: string[]) => {
+        let arr = Array.from(rules)
+
+        for (let i=0; i<arr.length;i++){
+            arr[i] = arr[i].replace(/^\/|\/$/g, '')
+        }
 
         fetch(`${BACKEND_BASE_URL}/rules/delete`, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
-            body: JSON.stringify(Array.from(rules))
+            body: JSON.stringify(arr)
 
         }).then((res) => {
             console.log("Deletion status: ", res.status)
@@ -128,7 +133,7 @@ export default function RulesPage() {
 
     const handleCreate = (rule: string) => {
 
-        fetch(`${BACKEND_BASE_URL}/rules/create?p=${rule}`, {
+        fetch(`${BACKEND_BASE_URL}/rules/create?p=${rule.replace(/^\/|\/$/g, '')}`, {
             method: "PUT",
             credentials: "include",
 
@@ -153,7 +158,7 @@ export default function RulesPage() {
 
     const handleChange = (rule: Rule, newPath: string) => {
 
-        fetch(`${BACKEND_BASE_URL}/rules/change?r=${rule.path}n=${newPath}`, {
+        fetch(`${BACKEND_BASE_URL}/rules/change?r=${rule.path.replace(/^\/|\/$/g, '') }n=${newPath}`, {
             method: "PATCH",
             credentials: "include"
 
@@ -292,6 +297,7 @@ export async function getRules(page: Number, dim: string): Promise<Rule[]> {
             console.log(response.status)
             return null
         }
+        
     }
     catch (err) {
         console.log(err)

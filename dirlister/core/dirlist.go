@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -78,9 +79,11 @@ func getDirHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _, match := rulesTree.Tree.LongestPrefix(path)
+	_, _, match := rulesTree.Tree.LongestPrefix(urlPath)
 
-	if match == true && strings.Trim(getSignedCookie(r, w), " ") == "" {
+	fmt.Println(match, urlPath)
+
+	if match == true && !checkAdmin(w, r) {
 		w.WriteHeader(403)
 		return
 	}

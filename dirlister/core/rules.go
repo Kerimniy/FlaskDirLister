@@ -28,8 +28,8 @@ type Rule struct {
 }
 
 type RuleResponse struct {
-	Path      string `json:"path"`
-	CreatedAt string `json:"createdAt"`
+	Path      string    `json:"path"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 var rulesTree RulesTree
@@ -67,7 +67,7 @@ func deleteRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method != "POST" {
+	if r.Method != "DELETE" {
 		w.WriteHeader(405)
 		return
 	}
@@ -124,7 +124,7 @@ func getRules(w http.ResponseWriter, r *http.Request) {
 			return false
 		} else if i <= offset+AppConf.SearchResultCount {
 
-			rulesList = append(rulesList, RuleResponse{Path: s, CreatedAt: rulesTree.Dates[s].String()})
+			rulesList = append(rulesList, RuleResponse{Path: s, CreatedAt: rulesTree.Dates[s]})
 
 			return false
 		} else {

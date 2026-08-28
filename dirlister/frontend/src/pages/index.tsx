@@ -92,6 +92,7 @@ export default function IndexPage() {
   const [checksList, setChecksList] = useState(new Set<string>)
   const [checkCount, setCheckCount] = useState(0)
 
+  const [fetchStatus, setFetchStatus] = useState(0)
 
   const leftArrowPageButton = useRef(null)
   const rightArrowPageButton = useRef(null)
@@ -115,7 +116,7 @@ export default function IndexPage() {
 
     let isMounted = true;
 
-    getFiles(folder, sortBy).then((res) => {
+    getFiles(folder, sortBy, setFetchStatus).then((res) => {
 
       if (isMounted) {
         setFiles(res);
@@ -130,8 +131,6 @@ export default function IndexPage() {
 
   }, [location.pathname])
 
-
-
   const handleDelete = (file: FileItem) => {
 
     fetch(`${BACKEND_BASE_URL}/manage/delete?file=${file.fullName}`, {
@@ -143,7 +142,7 @@ export default function IndexPage() {
       console.log("Deletion status: ", res.status)
 
       if (res.ok) {
-        getFiles(location.pathname, sortBy).then((res) => {
+        getFiles(location.pathname, sortBy, setFetchStatus).then((res) => {
 
           setFiles(res);
 
@@ -161,6 +160,7 @@ export default function IndexPage() {
 
     return
   };
+
   const handleDeleteAll = () => {
 
    
@@ -174,7 +174,7 @@ export default function IndexPage() {
       console.log("Deletion status: ", res.status)
 
       if (res.ok) {
-        getFiles(location.pathname, sortBy).then((res) => {
+        getFiles(location.pathname, sortBy, setFetchStatus).then((res) => {
 
           setFiles(res);
 
@@ -194,7 +194,6 @@ export default function IndexPage() {
     navigate(`/.@/edit?page=${file.fullName}`)
   };
 
-
   const handleRename = (file: FileItem) => {
 
     fetch(`${BACKEND_BASE_URL}/manage/rename?file=${file.fullName}`, {
@@ -205,7 +204,7 @@ export default function IndexPage() {
       console.log("Rename status: ", res.status)
 
       if (res.ok) {
-        getFiles(location.pathname, sortBy).then((res) => {
+        getFiles(location.pathname, sortBy, setFetchStatus).then((res) => {
 
           setFiles(res);
 
@@ -328,6 +327,7 @@ export default function IndexPage() {
               checkList={checksList}
               checkCount={checkCount}
               setCheckCount={setCheckCount}
+              fetchStatus={fetchStatus}
             />
           </div>
           {(files !== null && files !== undefined) &&

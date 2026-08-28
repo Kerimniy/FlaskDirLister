@@ -67,9 +67,10 @@ interface FileListProps {
 
   checkCount: number;
   setCheckCount: React.Dispatch<React.SetStateAction<number>> ;
+  fetchStatus: number
 }
 
-export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, setCheckAll, setCheckList, checkList, checkCount, setCheckCount }: FileListProps) {
+export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, setCheckAll, setCheckList, checkList, checkCount, setCheckCount, fetchStatus }: FileListProps) {
 
   const navigate = useNavigate();
 
@@ -77,8 +78,21 @@ export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, se
 
   const [newName, setNewName] = useState("")
 
-
-  if (files === null) {
+  
+console.log(fetchStatus)
+  if (fetchStatus === 403) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="rounded-full bg-muted p-4">
+          <MoreHorizontal className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <h3 className="mt-4 text-lg font-semibold">403</h3>
+        <p className="text-sm text-muted-foreground">
+          You don't have permission to this page.
+        </p>
+      </div>)
+  }
+  else if (fetchStatus !== 200 && fetchStatus !== 404) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="rounded-full bg-muted p-4">

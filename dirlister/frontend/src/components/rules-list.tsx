@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, MoreHorizontal, Trash2, Folder } from "lucide-react";
+import { Edit, MoreHorizontal, Trash2, Folder, Pencil } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -70,6 +70,7 @@ interface RulesListProps {
 
     checkCount: number;
     setCheckCount: React.Dispatch<React.SetStateAction<number>>;
+
 }
 
 export function RulesList({ rules, page, onDelete, onChange, checkAll, setCheckAll, setCheckList, checkList, checkCount, setCheckCount }: RulesListProps) {
@@ -180,9 +181,10 @@ export function RulesList({ rules, page, onDelete, onChange, checkAll, setCheckA
                                 <div className="flex items-center justify-end gap-1 focus-within:opacity-100">
 
                                     <AlertDialog>
-                                        <AlertDialogTrigger onClick={() => setNewRulePath(rule.path)} render={<span title="rename">
-                                            Change
-                                        </span>}>
+                                        <AlertDialogTrigger onClick={() => setNewRulePath(rule.path)} render={<Button variant="ghost" size="icon" title="change" className="h-8 w-8">
+                                            <Pencil className="h-4 w-4" />
+                                            <span className="sr-only">Change</span>
+                                        </Button>}>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
