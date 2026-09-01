@@ -27,6 +27,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "react-router";
 
+import { Progress } from "@/components/ui/progress"
+import { BACKEND_BASE_URL } from "@/App";
+import { useState } from "react";
+
+import { formatFileSize } from "@/lib/files";
+
 const mainItems = [
   { title: "Home", icon: Home, link: "/" },
   { title: "Route Rules", icon: Signpost, link: "/.@/rules" },
@@ -35,9 +41,21 @@ const mainItems = [
   { title: "Account", icon: UserRound, link: "/.@/account" },
 ];
 
-
+interface Usage {
+  percent: number
+  free: number
+  base: number
+}
 
 export function AppSidebar() {
+
+  const [usage, setUsage] = useState<Usage>(null)
+
+  fetch(`${BACKEND_BASE_URL}/info/disk-usage`, { credentials: "include" }).then(r => r.json()).then(res => {
+    let newUsage: Usage = { percent: res.percent, free: res.free, base: res.base }
+    setUsage(newUsage)
+  })
+
   return (
     <Sidebar variant="inset">
       <SidebarContent>
@@ -71,6 +89,23 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {usage !== null &&
+          <SidebarGroup>
+            <SidebarGroupLabel>Storage space</SidebarGroupLabel>
+            <SidebarGroupContent>
+
+              <div className="p-2 pt-4 pb-6 flex flex-col gap-4 bg-popover/50 rounded-lg">
+
+                <div className="text-ring font-semibold"><span>{formatFileSize(usage.free)}</span> of <span>{formatFileSize(usage.base)}</span> used</div>
+
+                <Progress value={usage.percent}
+                  max={100}
+                  className="mx-auto w-full max-w-xs"
+                ></Progress>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        }
       </SidebarContent>
     </Sidebar>
   );

@@ -13,6 +13,7 @@ import (
 
 type Config struct {
 	ExposingDir       string
+	ResultCount       int
 	SearchResultCount int
 	UploadLimit       int
 }
@@ -51,7 +52,8 @@ func main() {
 		panic(err)
 	}
 
-	count, err := strconv.Atoi(os.Getenv("SEARCH_RESULT_COUNT"))
+	resultCount, err := strconv.Atoi(os.Getenv("RESULT_COUNT"))
+	searchResultCount, err := strconv.Atoi(os.Getenv("SEARCH_RESULT_COUNT"))
 
 	if err != nil {
 		log.Fatal("ERROR 57 (get count) ", err)
@@ -63,7 +65,7 @@ func main() {
 		log.Fatal("ERROR 62 (get limit) ", err)
 	}
 
-	AppConf = Config{ExposingDir: os.Getenv("EXPDIR"), SearchResultCount: count, UploadLimit: _upload_limit}
+	AppConf = Config{ExposingDir: os.Getenv("EXPDIR"), ResultCount: resultCount, SearchResultCount: searchResultCount, UploadLimit: _upload_limit}
 
 	InitSecretKey()
 	init_db()
@@ -95,11 +97,23 @@ func main() {
 	mux.HandleFunc("/manage/delete-all", deleteAllHandle)
 	mux.HandleFunc("/manage/rename", renameHandle)
 
-	mux.HandleFunc("/info/upload-limit", func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, strconv.Itoa(AppConf.UploadLimit)) })
+	mux.HandleFunc("/info/upload-limit", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, strconv.Itoa(AppConf.UploadLimit))
+	})
+
+	mux.HandleFunc("/info/search-limit", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, strconv.Itoa(AppConf.SearchResultCount))
+	})
+
+	mux.HandleFunc("/info/result-limit", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, strconv.Itoa(AppConf.ResultCount))
+	})
+
+	mux.HandleFunc("/info/disk-usage", getUsageHandle)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", "no-store")
-		w.Write([]byte("hffhdfh"))
+		w.Write([]byte("204"))
 	})
 
 	fmt.Println("Listening at: ", os.Getenv("HOST"))

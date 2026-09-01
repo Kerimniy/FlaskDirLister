@@ -25,7 +25,7 @@ export interface FileItem {
 
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
@@ -96,11 +96,11 @@ export function getMimeColor(mimeType: string): string {
   return "text-slate-500";
 }
 
-export async function getFiles(folder: string, dim: string, setStatus: React.Dispatch<React.SetStateAction<number>>): Promise<FileItem[]> {
-  const url = `${BACKEND_BASE_URL}/s/${folder.replace(/\/+$/, '')}`;
+export async function searchFiles(query: string, page: number, dim: string, setStatus: React.Dispatch<React.SetStateAction<number>>): Promise<FileItem[]> {
+  const url = `${BACKEND_BASE_URL}/search?q=${query.replace(/\/+$/, '')}&p=${page}`;
   let response
   try {
-    response = await fetch(url);
+    response = await fetch(url, { credentials: "include" });
     setStatus(response.status)
 
     if (!response.ok) {
@@ -108,9 +108,50 @@ export async function getFiles(folder: string, dim: string, setStatus: React.Dis
       return null
     }
   }
-  catch(err){
+  catch (err) {
     console.log(err)
+    return null
+  }
+  const result = await response.json();
+
+
+  let files: FileItem[] = []
+
+    for (let el of result) {
+
+      files.push({ name: el.name, type: el.type, size: el.size, mimeType: mime.getType(el.name), modifiedAt: formatDate(el.modTime), fullName: el.fullName })
+
+    }
+  
+  
+  if (dim !== "") {
+    files = sortFilesBy(files, dim)
+  }
+  
+  return files
+
+
+}
+
+
+export async function getFiles(folder: string, dim: string,page:Number, setStatus: React.Dispatch<React.SetStateAction<number>>): Promise<FileItem[]> {
+  const url = `${BACKEND_BASE_URL}/s/${folder.replace(/\/+$/, '')}?p=${page}`;
+  let response
+  try {
+    response = await fetch(url, { credentials: "include" });
+    setStatus(response.status)
+    if (response.status===204){
+      return []
+    }
+
+    if (!response.ok) {
+      console.log(response.status)
       return null
+    }
+  }
+  catch (err) {
+    console.log(err)
+    return null
   }
   const result = await response.json();
 

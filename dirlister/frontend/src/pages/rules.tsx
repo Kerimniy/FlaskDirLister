@@ -192,6 +192,7 @@ export default function RulesPage() {
             <SidebarInset className="flex flex-col min-w-0">
                 <AppHeader
                     onProfileClick={() => navigate("/.@/account")}
+                    hideSearch={true}
                 />
 
 
@@ -276,9 +277,9 @@ export default function RulesPage() {
                         <Card className="flex-row justify-center mt-4">
                             <Button disabled={page === 0} ref={leftArrowPageButton} variant="outline" onClick={() => { if (page > 0) { rightArrowPageButton.current.disabled = false; setPage(page - 1); if (page - 1 === 0) { leftArrowPageButton.current.disabled = true } } }}><ChevronLeft /></Button>
 
-                            <Input min={0} max={Math.floor(rules.length / RESULTS_PER_PAGE)} style={{ width: `${String(page).length + 6}ch` }} type="number" value={page} onInput={(e) => { setPage(Number(e.currentTarget.value)) }}></Input>
+                            <Input min={0}  style={{ width: `${String(page).length + 6}ch` }} type="number" value={page} onInput={(e) => { setPage(Number(e.currentTarget.value)) }}></Input>
 
-                            <Button disabled={page === Math.floor(rules.length / RESULTS_PER_PAGE)} ref={rightArrowPageButton} variant="outline" onClick={() => { let maxPage = Math.floor(rules.length / RESULTS_PER_PAGE); if (page < maxPage) { leftArrowPageButton.current.disabled = false; setPage(page + 1); if (page + 1 === maxPage) { rightArrowPageButton.current.disabled = true } } }}><ChevronRight /></Button>
+                            <Button ref={rightArrowPageButton} variant="outline" onClick={() => {  leftArrowPageButton.current.disabled = false; setPage(page + 1);  } }><ChevronRight /></Button>
 
                         </Card>
                     }
@@ -292,7 +293,7 @@ export async function getRules(page: Number, dim: string): Promise<Rule[]> {
     const url = `${BACKEND_BASE_URL}/rules/get?p=${page}`;
     let response
     try {
-        response = await fetch(url);
+        response = await fetch(url, {credentials: "include"});
         if (!response.ok) {
             console.log(response.status)
             return null

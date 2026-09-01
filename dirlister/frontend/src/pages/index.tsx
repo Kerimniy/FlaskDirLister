@@ -8,7 +8,7 @@ import { FileList } from "@/components/file-list";
 import { Button } from "@/components/ui/button";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card"
-import { getFiles, sortFilesBy, type FileItem } from "@/lib/files";
+import { getFiles, sortFilesBy, searchFiles, type FileItem } from "@/lib/files";
 
 import { useLocation } from 'react-router-dom';
 
@@ -92,6 +92,8 @@ export default function IndexPage() {
   const [checksList, setChecksList] = useState(new Set<string>)
   const [checkCount, setCheckCount] = useState(0)
 
+  const [searchQuery, setSearchQuery] = useState("")
+
   const [fetchStatus, setFetchStatus] = useState(0)
 
   const leftArrowPageButton = useRef(null)
@@ -108,6 +110,13 @@ export default function IndexPage() {
     else {
       setSearchParams({ "page": String(page) })
     }
+
+    if (location.pathname === "/.@/search") {
+      searchFiles(searchQuery, page, sortBy, setFetchStatus).then(r => { setFiles(r) })
+      return
+    }
+
+    getFiles(location.pathname, sortBy, page, setFetchStatus).then(r => { console.log(r); setFiles(r) })
   }, [page])
 
   useEffect(() => {
@@ -116,7 +125,13 @@ export default function IndexPage() {
 
     let isMounted = true;
 
-    getFiles(folder, sortBy, setFetchStatus).then((res) => {
+    if (location.pathname === "/.@/search") {
+      setSearchQuery(searchParams.get("q"))
+      handleSearch()
+      return
+    }
+
+    getFiles(folder, sortBy, page, setFetchStatus).then((res) => {
 
       if (isMounted) {
         setFiles(res);
@@ -131,6 +146,7 @@ export default function IndexPage() {
 
   }, [location.pathname])
 
+
   const handleDelete = (file: FileItem) => {
 
     fetch(`${BACKEND_BASE_URL}/manage/delete?file=${file.fullName}`, {
@@ -142,17 +158,23 @@ export default function IndexPage() {
       console.log("Deletion status: ", res.status)
 
       if (res.ok) {
-        getFiles(location.pathname, sortBy, setFetchStatus).then((res) => {
 
-          setFiles(res);
+        if (location.pathname === "/.@/search") {
+          searchFiles(searchQuery, page, sortBy, setFetchStatus).then(r => { setFiles(r) })
+        }
+        else {
+          getFiles(location.pathname, sortBy, page, setFetchStatus).then((res) => {
 
-        });
+            setFiles(res);
 
-        let nchl = new Set(checksList)
-        nchl.delete(file.fullName)
-        setChecksList(nchl)
+          });
 
-        setPaths(getPathBarLinks())
+          let nchl = new Set(checksList)
+          nchl.delete(file.fullName)
+          setChecksList(nchl)
+
+          setPaths(getPathBarLinks())
+        }
       }
     });
 
@@ -163,8 +185,6 @@ export default function IndexPage() {
 
   const handleDeleteAll = () => {
 
-   
-
     fetch(`${BACKEND_BASE_URL}/manage/delete-all`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -174,14 +194,20 @@ export default function IndexPage() {
       console.log("Deletion status: ", res.status)
 
       if (res.ok) {
-        getFiles(location.pathname, sortBy, setFetchStatus).then((res) => {
 
-          setFiles(res);
+        if (location.pathname === "/.@/search") {
+          searchFiles(searchQuery, page, sortBy, setFetchStatus).then(r => { setFiles(r) })
+        }
+        else {
+          getFiles(location.pathname, sortBy, page, setFetchStatus).then((res) => {
 
-        });
-        setChecksList(new Set<string>())
+            setFiles(res);
 
-        setPaths(getPathBarLinks())
+          });
+          setChecksList(new Set<string>())
+
+          setPaths(getPathBarLinks())
+        }
       }
     });
 
@@ -204,13 +230,19 @@ export default function IndexPage() {
       console.log("Rename status: ", res.status)
 
       if (res.ok) {
-        getFiles(location.pathname, sortBy, setFetchStatus).then((res) => {
 
-          setFiles(res);
+        if (location.pathname === "/.@/search") {
+          searchFiles(searchQuery, page, sortBy, setFetchStatus).then(r => { setFiles(r) })
+        }
+        else {
+          getFiles(location.pathname, sortBy, page, setFetchStatus).then((res) => {
 
-        });
+            setFiles(res);
 
-        setPaths(getPathBarLinks())
+          });
+
+          setPaths(getPathBarLinks())
+        }
       }
     });
 
@@ -218,6 +250,12 @@ export default function IndexPage() {
 
     return
   };
+
+  const handleSearch = () => {
+    setPage(0);
+    navigate(`/.@/search?q=${searchQuery}`)
+    searchFiles(searchQuery, 0, "", setFetchStatus).then(r => { console.log(r); setFiles(r) })
+  }
 
 
   const [sortBy, setSortBy] = useState(localStorage.getItem("sortBy") || "Alphabet")
@@ -232,6 +270,10 @@ export default function IndexPage() {
       <SidebarInset className="flex flex-col min-w-0">
         <AppHeader
           onProfileClick={() => navigate("/.@/account")}
+          hideSearch={false}
+          onSearch={() => { handleSearch() }}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
 
 
@@ -302,7 +344,7 @@ export default function IndexPage() {
 
           </div>
 
-          <Card className="overflow-auto p-2 md:p-3 mb-3 flex flex-row justify-start align-center">
+          {location.pathname !== "/.@/search" && <Card className="overflow-auto p-2 md:p-3 mb-3 flex flex-row justify-start align-center">
             <CardContent className="flex flex-row gap-[0.125rem] items-center">
 
 
@@ -311,7 +353,7 @@ export default function IndexPage() {
                 return <><Link to={el.path}>{el.name}</Link><span>/</span></>
               })}
             </CardContent>
-          </Card>
+          </Card>}
 
           <div className="rounded-lg border bg-card">
             <FileList
@@ -330,16 +372,18 @@ export default function IndexPage() {
               fetchStatus={fetchStatus}
             />
           </div>
+
           {(files !== null && files !== undefined) &&
             <Card className="flex-row justify-center mt-4">
               <Button disabled={page === 0} ref={leftArrowPageButton} variant="outline" onClick={() => { if (page > 0) { rightArrowPageButton.current.disabled = false; setPage(page - 1); if (page - 1 === 0) { leftArrowPageButton.current.disabled = true } } }}><ChevronLeft /></Button>
 
-              <Input min={0} max={Math.floor(files.length / RESULTS_PER_PAGE)} style={{ width: `${String(page).length + 6}ch` }} type="number" value={page} onInput={(e) => { setPage(Number(e.currentTarget.value)) }}></Input>
+              <Input min={0} style={{ width: `${String(page).length + 6}ch` }} type="number" value={page} onInput={(e) => { setPage(Number(e.currentTarget.value)) }}></Input>
 
-              <Button disabled={page === Math.floor(files.length / RESULTS_PER_PAGE)} ref={rightArrowPageButton} variant="outline" onClick={() => { let maxPage = Math.floor(files.length / RESULTS_PER_PAGE); if (page < maxPage) { leftArrowPageButton.current.disabled = false; setPage(page + 1); if (page + 1 === maxPage) { rightArrowPageButton.current.disabled = true } } }}><ChevronRight /></Button>
+              <Button ref={rightArrowPageButton} variant="outline" onClick={() => { leftArrowPageButton.current.disabled = false; setPage(page + 1); }}><ChevronRight /></Button>
 
             </Card>
           }
+
         </main>
       </SidebarInset>
     </SidebarProvider>

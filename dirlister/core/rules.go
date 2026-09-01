@@ -83,7 +83,7 @@ func deleteRule(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	payload := Rule{}
+	payload := []string{}
 	err := json.Unmarshal(b, &payload)
 
 	if err != nil {
@@ -91,17 +91,26 @@ func deleteRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := db.Unscoped().Delete(payload)
+	for _, entry := range payload {
 
-	if result.Error != nil {
-		w.WriteHeader(500)
-		fmt.Println(result.Error)
+		result := db.Unscoped().Where("path = ?", entry).Delete(Rule{})
+
+		if result.Error != nil {
+			w.WriteHeader(500)
+			fmt.Println(result.Error)
+		}
+
+		rulesTree.Tree.Delete(entry)
+		delete(rulesTree.Dates, entry)
 	}
-
-	rulesTree.Tree.Delete(payload.Path)
 }
 
 func getRules(w http.ResponseWriter, r *http.Request) {
+
+	if !checkAdmin(w, r) {
+		w.WriteHeader(403)
+		return
+	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("p"))
 
@@ -114,7 +123,7 @@ func getRules(w http.ResponseWriter, r *http.Request) {
 
 	rulesList := []RuleResponse{}
 
-	offset := page * AppConf.SearchResultCount
+	offset := page * AppConf.ResultCount
 
 	var i = 0
 
@@ -122,7 +131,7 @@ func getRules(w http.ResponseWriter, r *http.Request) {
 		i++
 		if i <= offset {
 			return false
-		} else if i <= offset+AppConf.SearchResultCount {
+		} else if i <= offset+AppConf.ResultCount {
 
 			rulesList = append(rulesList, RuleResponse{Path: s, CreatedAt: rulesTree.Dates[s]})
 

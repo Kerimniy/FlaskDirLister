@@ -66,7 +66,7 @@ interface FileListProps {
   checkList: Set<string>;
 
   checkCount: number;
-  setCheckCount: React.Dispatch<React.SetStateAction<number>> ;
+  setCheckCount: React.Dispatch<React.SetStateAction<number>>;
   fetchStatus: number
 }
 
@@ -78,8 +78,7 @@ export function FileList({ files, page, onEdit, onDelete, onRename, checkAll, se
 
   const [newName, setNewName] = useState("")
 
-  
-console.log(fetchStatus)
+
   if (fetchStatus === 403) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -92,7 +91,7 @@ console.log(fetchStatus)
         </p>
       </div>)
   }
-  else if (fetchStatus !== 200 && fetchStatus !== 404) {
+  else if (fetchStatus !== 200 && fetchStatus !== 404 && fetchStatus!==204) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="rounded-full bg-muted p-4">
@@ -105,7 +104,7 @@ console.log(fetchStatus)
       </div>)
   }
 
-  if (files === undefined || files.length === 0) {
+  if ((files === undefined || files.length === 0) && fetchStatus !== 204) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="rounded-full bg-muted p-4">
@@ -135,7 +134,7 @@ console.log(fetchStatus)
         </TableRow>
       </TableHeader>
       <TableBody>
-        {files.slice(page * RESULTS_PER_PAGE, (page + 1) * RESULTS_PER_PAGE).map((file, i) => {
+        {files.map((file, i) => {
           const Icon = (file.type === "folder") ? Folder : getMimeTypeIcon(file.mimeType);
           const colorClass = (file.type === "folder") ? "text-slate-500" : getMimeColor(file.mimeType);
 

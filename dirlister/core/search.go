@@ -8,20 +8,20 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 type File struct {
-	ID   uint   `gorm:"primaryKey"`
-	Dir  string `gorm:"not null;index:idx_dir"`
-	Name string `gorm:"not null;index:idx_name"`
-}
-
-type SearchResponse struct {
-	Match1 []File
-	Match2 []File
-	Match3 []File
+	ID      uint   `gorm:"primaryKey"`
+	Dir     string `gorm:"not null;index:idx_dir"`
+	Name    string `gorm:"not null;index:idx_name"`
+	Size    int64
+	ModTime time.Time
+	IsDir   bool
 }
 
 func initSearch() {
@@ -37,17 +37,26 @@ func initSearch() {
 		if err != nil {
 			return err
 		}
-		rel, err := filepath.Rel(AppConf.ExposingDir, path)
-
+		rel, err := filepath.Rel(AppConf.ExposingDir, filepath.Dir(path))
 		if err != nil {
 			return err
 		}
 
-		if rel[0] == '.' {
+		if rel == "." {
+			rel = ""
+		}
+
+		info, err := d.Info()
+
+		if strings.HasPrefix(info.Name(), ".") {
 			return nil
 		}
 
-		file := File{Name: filepath.Base(rel), Dir: rel}
+		if err != nil {
+			fmt.Println("search.go:57 entry skipped", err)
+		}
+
+		file := File{Name: info.Name(), Dir: rel, IsDir: info.IsDir(), Size: info.Size(), ModTime: info.ModTime()}
 
 		res := db.Create(&file)
 
@@ -63,10 +72,11 @@ func initSearch() {
 
 }
 
-func search(query string, user string) (SearchResponse, error) {
+func search(query string, user string, page int) ([]EntryInfo, error) {
 
-	remaining := AppConf.SearchResultCount
+	skip := page * AppConf.SearchResultCount
 
+	remaining := AppConf.SearchResultCount + skip
 	var match1 []File
 	var match2 []File
 	var match3 []File
@@ -77,7 +87,7 @@ func search(query string, user string) (SearchResponse, error) {
 		Find(&match1).Error
 
 	if err != nil {
-		return SearchResponse{}, err
+		return []EntryInfo{}, err
 	}
 
 	match1 = filter(match1, user)
@@ -101,7 +111,7 @@ func search(query string, user string) (SearchResponse, error) {
 		err = q.Find(&match2).Error
 
 		if err != nil {
-			return SearchResponse{}, err
+			return []EntryInfo{}, err
 		}
 
 		match2 = filter(match2, user)
@@ -126,19 +136,42 @@ func search(query string, user string) (SearchResponse, error) {
 			match3 = filter(match3, user)
 
 			if err != nil {
-				return SearchResponse{}, err
+				return []EntryInfo{}, err
 			}
 		}
 
 	}
 
-	return SearchResponse{Match1: match1, Match2: match2, Match3: match3}, nil
+	match := append(match1, append(match2, match3...)...)
+	match = match[skip:]
+
+	res := []EntryInfo{}
+
+	for _, el := range match {
+		_type := ""
+		if el.IsDir {
+			_type = "folder"
+		} else {
+
+			_type = "file"
+		}
+		res = append(res, EntryInfo{Name: el.Name, Type: _type, Size: el.Size, FullName: filepath.Join(el.Dir, el.Name), ModTime: el.ModTime})
+	}
+
+	return res, nil
 
 }
 
 func searchHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		w.WriteHeader(405)
+		return
+	}
+
+	page, err := strconv.Atoi(r.URL.Query().Get("p"))
+
+	if err != nil {
+		w.WriteHeader(400)
 		return
 	}
 
@@ -150,7 +183,7 @@ func searchHandle(w http.ResponseWriter, r *http.Request) {
 	}
 	query := r.URL.Query().Get("q")
 
-	res, err := search(query, getSignedCookie(r, w))
+	res, err := search(query, getSignedCookie(r, w), page)
 
 	if err != nil {
 		fmt.Println(err)

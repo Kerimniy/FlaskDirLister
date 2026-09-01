@@ -8,11 +8,19 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router";
 import { useEffect, useState } from "react";
 
+import { type FileItem } from "@/lib/files";
+
+
 interface AppHeaderProps {
   onProfileClick?: () => void;
+  hideSearch: boolean;
+  onSearch?: () => void;
+
+  searchQuery?: string;
+  setSearchQuery?: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export function AppHeader({ onProfileClick }: AppHeaderProps) {
+export function AppHeader({ onProfileClick, hideSearch, onSearch, searchQuery, setSearchQuery }: AppHeaderProps) {
 
   const location = useLocation();
 
@@ -33,14 +41,20 @@ export function AppHeader({ onProfileClick }: AppHeaderProps) {
     <header className="sticky top-0 z-10 flex h-16 items-center rounded-full gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
       <SidebarTrigger className="-ml-1" />
 
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Поиск файлов..."
-          className="pl-9"
-        />
-      </div>
+      {!hideSearch && <>
+        <form onSubmit={(e) => { e.preventDefault(); onSearch() }} className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            placeholder="Search..."
+            className="pl-9"
+            onInput={(e) => { setSearchQuery(e.currentTarget.value) }}
+          />
+        </form>
 
+
+      </>
+      }
       <div className="ml-auto flex items-center gap-2">
         <Link to={`/.@/upload?dir=${dir}`}>
           <Button variant="outline" size="sm" className="hidden sm:flex">
@@ -48,7 +62,6 @@ export function AppHeader({ onProfileClick }: AppHeaderProps) {
             Upload
           </Button>
         </Link>
-
         <Button
           variant="ghost"
           size="icon"

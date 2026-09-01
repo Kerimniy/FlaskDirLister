@@ -50,9 +50,8 @@ export default function AccountPage() {
 
       <SidebarInset className="flex flex-col min-w-0">
         <AppHeader
-          user={user}
-          onLoginClick={() => console.log("login")}
           onProfileClick={() => console.log("profile")}
+          hideSearch={true}
         />
 
         <div className="flex-col flex items-center gap-4 p-6">

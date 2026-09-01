@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type uploadData struct {
@@ -267,6 +268,9 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 
 	dir := r.URL.Query().Get("dir")
 
+	dir=strings.TrimLeft(dir,"/")
+	dir=strings.Trim(dir,"/")
+
 	err := r.ParseMultipartForm(int64(AppConf.UploadLimit))
 	if err != nil {
 		w.WriteHeader(500)
@@ -312,6 +316,22 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(500)
 			io.WriteString(w, "02 Couldn't load file:"+file.Filename)
+			return
+		}
+
+		stat, err:=newFile.Stat()
+
+		if err != nil {
+			w.WriteHeader(500)
+			io.WriteString(w, "03 Couldn't index file:"+file.Filename)
+			return
+		}
+
+		err=db.Create(File{Name: newFile.Name(),Dir: dir, Size: stat.Size(), IsDir: false, ModTime: time.Now()}).Error
+
+		if err != nil {
+			w.WriteHeader(500)
+			io.WriteString(w, "03 Couldn't index file:"+file.Filename)
 			return
 		}
 

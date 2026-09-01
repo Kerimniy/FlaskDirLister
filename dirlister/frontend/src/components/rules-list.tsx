@@ -123,7 +123,7 @@ export function RulesList({ rules, page, onDelete, onChange, checkAll, setCheckA
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {rules.slice(page * RESULTS_PER_PAGE, (page + 1) * RESULTS_PER_PAGE).map((rule, i) => {
+                {rules.map((rule, i) => {
 
                     return (
                         <TableRow

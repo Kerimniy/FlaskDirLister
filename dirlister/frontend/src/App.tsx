@@ -26,7 +26,10 @@ export const AuthContext = createContext<{
 } | null>(null);
 
 export const BACKEND_BASE_URL = "https://127.0.0.1:6060"
-export const RESULTS_PER_PAGE = 12
+export let RESULTS_PER_PAGE = Number(localStorage.getItem("___results_per_page"))
+export let SEARCH_RESULTS_PER_PAGE = Number(localStorage.getItem("___search_results_per_page"))
+
+
 
 function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserStruct | null>(null);
@@ -45,7 +48,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
             return r.text()
           }
         }
-        else if (r.status===401){
+        else if (r.status === 401) {
         }
         return null;
       })
@@ -97,6 +100,19 @@ export function useAuth() {
 function App() {
 
   //  включить loading editor
+
+  useEffect(() => {
+    fetch(`${BACKEND_BASE_URL}/info/result-limit`).then(r => r.text()).then((r) => {
+      let _r = Number(r)
+      localStorage.setItem("___results_per_page", String(_r))
+      RESULTS_PER_PAGE = _r
+    })
+    fetch(`${BACKEND_BASE_URL}/info/search-limit`).then(r => r.text()).then((r) => {
+      let _r = Number(r)
+      localStorage.setItem("___search_results_per_page", String(_r))
+      SEARCH_RESULTS_PER_PAGE = _r
+    })
+  }, [])
 
   return (<div className="flex h-screen w-full">
     <ThemeProvider attribute="class"
