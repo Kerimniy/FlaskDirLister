@@ -17,8 +17,8 @@ import (
 
 type File struct {
 	ID      uint   `gorm:"primaryKey"`
-	Dir     string `gorm:"not null;index:idx_dir"`
-	Name    string `gorm:"not null;index:idx_name"`
+	Dir     string `gorm:"not null;index:idx_dir;uniqueIndex:idx_dir_name"`
+	Name    string `gorm:"not null;index:idx_name;uniqueIndex:idx_dir_name"`
 	Size    int64
 	ModTime time.Time
 	IsDir   bool

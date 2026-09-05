@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type uploadData struct {
@@ -24,6 +27,7 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filename := r.URL.Query().Get("file")
+	filename = strings.Trim(strings.TrimLeft(filename, "/"), "/")
 
 	isEdit := r.URL.Query().Get("edit") == "true"
 
@@ -57,6 +61,16 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
 			return
 		}
+		stat, err := file.Stat()
+		err = indexNewDirs(filename, stat.Size(), false)
+
+		if err != nil {
+			fmt.Println(err)
+
+			w.WriteHeader(500)
+			return
+		}
+
 	} else {
 
 		if r.Method == "OPTIONS" {
@@ -139,7 +153,18 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 
 		}
 
+		stat, err := file.Stat()
+		err = indexNewDirs(rel, stat.Size(), false)
+
+		if err != nil {
+			fmt.Println(err)
+
+			w.WriteHeader(500)
+			return
+		}
+
 	}
+
 }
 
 func deleteHandle(w http.ResponseWriter, r *http.Request) {
@@ -150,6 +175,7 @@ func deleteHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filename := r.URL.Query().Get("file")
+	filename = strings.Trim(strings.TrimLeft(filename, "/"), "/")
 
 	path := filepath.Join(AppConf.ExposingDir, filename)
 
@@ -168,6 +194,12 @@ func deleteHandle(w http.ResponseWriter, r *http.Request) {
 
 	err = os.RemoveAll(path)
 
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+
+	err = indexNewDirs(filename, 0, true)
 	if err != nil {
 		w.WriteHeader(500)
 		return
@@ -201,6 +233,7 @@ func deleteAllHandle(w http.ResponseWriter, r *http.Request) {
 	for _, filename := range filenames {
 
 		path := filepath.Join(AppConf.ExposingDir, filename)
+		filename = strings.Trim(strings.TrimLeft(filename, "/"), "/")
 
 		rel, err := filepath.Rel(AppConf.ExposingDir, path)
 
@@ -221,6 +254,15 @@ func deleteAllHandle(w http.ResponseWriter, r *http.Request) {
 			io.WriteString(w, filename)
 			return
 		}
+
+		err = indexNewDirs(filename, 0, true)
+		if err != nil {
+			fmt.Println(err)
+
+			w.WriteHeader(500)
+			return
+		}
+
 	}
 
 }
@@ -234,14 +276,50 @@ func renameHandle(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 
-	fileName := filepath.Join(AppConf.ExposingDir, query.Get("file"))
-	newName := filepath.Join(AppConf.ExposingDir, query.Get("name"))
+	_f := strings.Trim(strings.TrimLeft(query.Get("file"), "/"), "/")
+	_n := strings.Trim(strings.TrimLeft(query.Get("name"), "/"), "/")
+
+	fileName := filepath.Join(AppConf.ExposingDir, _f)
+	newName := filepath.Join(AppConf.ExposingDir, _n)
 
 	err := os.Rename(fileName, newName)
 
 	if err != nil {
 		w.WriteHeader(500)
 		io.WriteString(w, "Rename error: "+err.Error())
+		return
+	}
+
+	file, err := os.Open(newName)
+
+	if err != nil {
+		w.WriteHeader(500)
+		io.WriteString(w, "Rename error: "+err.Error())
+		return
+	}
+
+	stat, err := file.Stat()
+
+	if err != nil {
+		w.WriteHeader(500)
+		io.WriteString(w, "Rename error: "+err.Error())
+		return
+	}
+
+	err = indexNewDirs(_n, stat.Size(), false)
+
+	if err != nil {
+		w.WriteHeader(500)
+		io.WriteString(w, "Rename error: "+err.Error())
+		return
+	}
+
+	err = indexNewDirs(_f, 0, true)
+
+	if err != nil {
+		w.WriteHeader(500)
+		io.WriteString(w, "Rename error: "+err.Error())
+		return
 	}
 
 }
@@ -268,8 +346,8 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 
 	dir := r.URL.Query().Get("dir")
 
-	dir=strings.TrimLeft(dir,"/")
-	dir=strings.Trim(dir,"/")
+	dir = strings.TrimLeft(dir, "/")
+	dir = strings.Trim(dir, "/")
 
 	err := r.ParseMultipartForm(int64(AppConf.UploadLimit))
 	if err != nil {
@@ -291,6 +369,15 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 		defer f.Close()
 
 		fullDir := filepath.Join(AppConf.ExposingDir, dir)
+
+		rel, err := filepath.Rel(AppConf.ExposingDir, fullDir)
+		if err != nil {
+			w.WriteHeader(400)
+			return
+		}
+
+		relName := filepath.Join(rel, file.Filename)
+
 		fullName := filepath.Join(fullDir, file.Filename)
 
 		err = os.MkdirAll(fullDir, os.ModePerm)
@@ -319,7 +406,7 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		stat, err:=newFile.Stat()
+		stat, err := newFile.Stat()
 
 		if err != nil {
 			w.WriteHeader(500)
@@ -327,7 +414,7 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err=db.Create(File{Name: newFile.Name(),Dir: dir, Size: stat.Size(), IsDir: false, ModTime: time.Now()}).Error
+		err = indexNewDirs(relName, stat.Size(), false)
 
 		if err != nil {
 			w.WriteHeader(500)
@@ -336,4 +423,61 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+}
+
+func indexNewDirs(path string, fileSize int64, delete bool) error {
+	f := false
+	r := false
+	for {
+		if r {
+			break
+		}
+
+		name := filepath.Base(path)
+		path = filepath.Dir(path)
+
+
+		if path == "." || path == string(filepath.Separator) {
+			path = ""
+
+			r = true
+		}
+
+		var _fileSize int64 = 0
+
+		if !f {
+			_fileSize = fileSize
+		}
+
+		var result *gorm.DB
+
+		if delete {
+
+			result = db.Unscoped().Where("dir = ?", path).Where("name = ?", name).Delete(&File{})
+
+		} else {
+
+			result = db.Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).Create(&File{
+				Name:    name,
+				Dir:     path,
+				IsDir:   f,
+				ModTime: time.Now(),
+				Size:    _fileSize,
+			})
+		}
+
+		if f {
+			f = true
+		}
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+	}
+
+	return nil
+
 }

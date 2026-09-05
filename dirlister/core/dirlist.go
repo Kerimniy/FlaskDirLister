@@ -60,13 +60,6 @@ func getDirHandle(w http.ResponseWriter, r *http.Request) {
 
 	urlPath := r.PathValue("path")
 
-	page, err := strconv.Atoi(r.URL.Query().Get("p"))
-
-	if err != nil {
-		w.WriteHeader(400)
-		return
-	}
-
 	path := filepath.Join(AppConf.ExposingDir, urlPath)
 
 	rel, err := filepath.Rel(AppConf.ExposingDir, path)
@@ -105,6 +98,13 @@ func getDirHandle(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("open") == "true" {
 			w.WriteHeader(400)
 			io.WriteString(w, "Folder is not editable")
+			return
+		}
+
+		page, err := strconv.Atoi(r.URL.Query().Get("p"))
+
+		if err != nil {
+			w.WriteHeader(400)
 			return
 		}
 
