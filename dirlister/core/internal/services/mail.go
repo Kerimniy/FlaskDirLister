@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"text/template"
 	"time"
 
 	"bytes"
@@ -27,7 +28,7 @@ type Mail struct {
 var mail_conf Mail
 var ctx = context.Background()
 
-//var tmpl = template.Must(template.ParseFiles("templates/recovery.html"))
+var tmpl = template.Must(template.ParseFiles("assets/recovery.html"))
 
 func InitMail() {
 

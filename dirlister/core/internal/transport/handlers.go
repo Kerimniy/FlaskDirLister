@@ -59,12 +59,22 @@ func ListenAndServeHTTP() {
 
 	mux.HandleFunc("/", indexPage)
 
-	fmt.Println("Listening at: ", os.Getenv("HOST"))
+	if os.Getenv("CERT") != "" && os.Getenv("KEY") != "" {
+		fmt.Println("Listening at: ", os.Getenv("HOST"), ", TLS enabled")
 
-	err := http.ListenAndServeTLS(os.Getenv("HOST"), os.Getenv("CERT"), os.Getenv("KEY"), corsMiddleware(mux))
+		err := http.ListenAndServeTLS(os.Getenv("HOST"), os.Getenv("CERT"), os.Getenv("KEY"), corsMiddleware(mux))
 
-	if err != nil {
-		log.Fatal(0, err)
+		if err != nil {
+			log.Fatal(0, err)
+		}
+	} else {
+		fmt.Println("Listening at: ", os.Getenv("HOST"), ", TLS disabled")
+
+		err := http.ListenAndServe(os.Getenv("HOST"), corsMiddleware(mux))
+
+		if err != nil {
+			log.Fatal(0, err)
+		}
 	}
 }
 
