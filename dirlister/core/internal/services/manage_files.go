@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"encoding/json"
@@ -12,14 +12,13 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"kerimniy.qzz.io/dirlister/internal/config"
+	db "kerimniy.qzz.io/dirlister/internal/database"
+	"kerimniy.qzz.io/dirlister/internal/models"
 )
 
-type uploadData struct {
-	NewName string `json:"newName"`
-	Content string `json:"content"`
-}
-
-func uploadHandle(w http.ResponseWriter, r *http.Request) {
+func UploadHandle(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -32,9 +31,9 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 	isEdit := r.URL.Query().Get("edit") == "true"
 
 	if !isEdit {
-		path := filepath.Join(AppConf.ExposingDir, filename)
+		path := filepath.Join(config.AppConf.ExposingDir, filename)
 
-		rel, err := filepath.Rel(AppConf.ExposingDir, path)
+		rel, err := filepath.Rel(config.AppConf.ExposingDir, path)
 		if err != nil {
 			w.WriteHeader(400)
 			return
@@ -85,7 +84,7 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
 			return
 		}
-		payload := uploadData{}
+		payload := models.UploadData{}
 		err := json.Unmarshal(b, &payload)
 
 		if err != nil {
@@ -95,9 +94,9 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		path := filepath.Join(AppConf.ExposingDir, filename)
+		path := filepath.Join(config.AppConf.ExposingDir, filename)
 
-		rel, err := filepath.Rel(AppConf.ExposingDir, path)
+		rel, err := filepath.Rel(config.AppConf.ExposingDir, path)
 
 		if err != nil {
 			fmt.Println(err)
@@ -105,9 +104,9 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		newPath := filepath.Join(AppConf.ExposingDir, payload.NewName)
+		newPath := filepath.Join(config.AppConf.ExposingDir, payload.NewName)
 
-		rel, err = filepath.Rel(AppConf.ExposingDir, newPath)
+		rel, err = filepath.Rel(config.AppConf.ExposingDir, newPath)
 
 		if err != nil {
 			fmt.Println(err)
@@ -167,7 +166,7 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func deleteHandle(w http.ResponseWriter, r *http.Request) {
+func DeleteHandle(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -177,9 +176,9 @@ func deleteHandle(w http.ResponseWriter, r *http.Request) {
 	filename := r.URL.Query().Get("file")
 	filename = strings.Trim(strings.TrimLeft(filename, "/"), "/")
 
-	path := filepath.Join(AppConf.ExposingDir, filename)
+	path := filepath.Join(config.AppConf.ExposingDir, filename)
 
-	rel, err := filepath.Rel(AppConf.ExposingDir, path)
+	rel, err := filepath.Rel(config.AppConf.ExposingDir, path)
 
 	if err != nil {
 		w.WriteHeader(400)
@@ -206,7 +205,7 @@ func deleteHandle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func deleteAllHandle(w http.ResponseWriter, r *http.Request) {
+func DeleteAllHandle(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -232,10 +231,10 @@ func deleteAllHandle(w http.ResponseWriter, r *http.Request) {
 
 	for _, filename := range filenames {
 
-		path := filepath.Join(AppConf.ExposingDir, filename)
+		path := filepath.Join(config.AppConf.ExposingDir, filename)
 		filename = strings.Trim(strings.TrimLeft(filename, "/"), "/")
 
-		rel, err := filepath.Rel(AppConf.ExposingDir, path)
+		rel, err := filepath.Rel(config.AppConf.ExposingDir, path)
 
 		if err != nil {
 			w.WriteHeader(400)
@@ -267,7 +266,7 @@ func deleteAllHandle(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func renameHandle(w http.ResponseWriter, r *http.Request) {
+func RenameHandle(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -279,8 +278,8 @@ func renameHandle(w http.ResponseWriter, r *http.Request) {
 	_f := strings.Trim(strings.TrimLeft(query.Get("file"), "/"), "/")
 	_n := strings.Trim(strings.TrimLeft(query.Get("name"), "/"), "/")
 
-	fileName := filepath.Join(AppConf.ExposingDir, _f)
-	newName := filepath.Join(AppConf.ExposingDir, _n)
+	fileName := filepath.Join(config.AppConf.ExposingDir, _f)
+	newName := filepath.Join(config.AppConf.ExposingDir, _n)
 
 	err := os.Rename(fileName, newName)
 
@@ -332,7 +331,7 @@ func CreateFile(path string) (*os.File, error) {
 	return os.Create(path)
 }
 
-func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
+func UploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		w.WriteHeader(405)
@@ -349,7 +348,7 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 	dir = strings.TrimLeft(dir, "/")
 	dir = strings.Trim(dir, "/")
 
-	err := r.ParseMultipartForm(int64(AppConf.UploadLimit))
+	err := r.ParseMultipartForm(int64(config.AppConf.UploadLimit))
 	if err != nil {
 		w.WriteHeader(500)
 		io.WriteString(w, "Parse form error:"+err.Error())
@@ -368,9 +367,9 @@ func uploadMultipleHandle(w http.ResponseWriter, r *http.Request) {
 
 		defer f.Close()
 
-		fullDir := filepath.Join(AppConf.ExposingDir, dir)
+		fullDir := filepath.Join(config.AppConf.ExposingDir, dir)
 
-		rel, err := filepath.Rel(AppConf.ExposingDir, fullDir)
+		rel, err := filepath.Rel(config.AppConf.ExposingDir, fullDir)
 		if err != nil {
 			w.WriteHeader(400)
 			return
@@ -436,7 +435,6 @@ func indexNewDirs(path string, fileSize int64, delete bool) error {
 		name := filepath.Base(path)
 		path = filepath.Dir(path)
 
-
 		if path == "." || path == string(filepath.Separator) {
 			path = ""
 
@@ -453,13 +451,13 @@ func indexNewDirs(path string, fileSize int64, delete bool) error {
 
 		if delete {
 
-			result = db.Unscoped().Where("dir = ?", path).Where("name = ?", name).Delete(&File{})
+			result = db.Db.Unscoped().Where("dir = ?", path).Where("name = ?", name).Delete(&models.File{})
 
 		} else {
 
-			result = db.Clauses(clause.OnConflict{
+			result = db.Db.Clauses(clause.OnConflict{
 				DoNothing: true,
-			}).Create(&File{
+			}).Create(&models.File{
 				Name:    name,
 				Dir:     path,
 				IsDir:   f,

@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"math/rand"
 
 	"github.com/wneessen/go-mail"
+	"kerimniy.qzz.io/dirlister/internal/models"
 )
 
 type Mail struct {
@@ -28,7 +29,7 @@ var ctx = context.Background()
 
 //var tmpl = template.Must(template.ParseFiles("templates/recovery.html"))
 
-func init_mail() {
+func InitMail() {
 
 	mail_conf = Mail{
 		Username: os.Getenv("USER"),
@@ -39,7 +40,7 @@ func init_mail() {
 
 }
 
-func validate_code(address string, code string) bool {
+func validateCode(address string, code string) bool {
 
 	res := authCode.Check(code)
 	if res == true {
@@ -50,7 +51,7 @@ func validate_code(address string, code string) bool {
 
 }
 
-func send_confirm(address string) error {
+func sendConfirm(address string) error {
 
 	code := fmt.Sprintf("%06d", rand.Intn(999999))
 
@@ -95,7 +96,7 @@ func send_confirm(address string) error {
 	return nil
 }
 
-func request_confirm_code(w http.ResponseWriter, r *http.Request) {
+func RequestConfirmCode(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		w.WriteHeader(405)
@@ -108,10 +109,10 @@ func request_confirm_code(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	email := Email{}
+	email := models.Email{}
 	json.Unmarshal(b, &email)
 
-	err := send_confirm(email.Email)
+	err := sendConfirm(email.Email)
 
 	if err != nil {
 		w.WriteHeader(500)

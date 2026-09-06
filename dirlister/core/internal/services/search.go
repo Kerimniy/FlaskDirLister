@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"encoding/json"
@@ -10,34 +10,29 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"gorm.io/gorm"
+
+	"kerimniy.qzz.io/dirlister/internal/config"
+	db "kerimniy.qzz.io/dirlister/internal/database"
+
+	"kerimniy.qzz.io/dirlister/internal/models"
 )
 
-type File struct {
-	ID      uint   `gorm:"primaryKey"`
-	Dir     string `gorm:"not null;index:idx_dir;uniqueIndex:idx_dir_name"`
-	Name    string `gorm:"not null;index:idx_name;uniqueIndex:idx_dir_name"`
-	Size    int64
-	ModTime time.Time
-	IsDir   bool
-}
+func InitSearch() {
 
-func initSearch() {
-
-	err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&File{}).Error
+	err := db.Db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&models.File{}).Error
 
 	if err != nil {
 		log.Fatal("ERROR 29 (clean search db) ", err)
 	}
 
-	err = filepath.WalkDir(AppConf.ExposingDir, func(path string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(config.AppConf.ExposingDir, func(path string, d os.DirEntry, err error) error {
 
 		if err != nil {
 			return err
 		}
-		rel, err := filepath.Rel(AppConf.ExposingDir, filepath.Dir(path))
+		rel, err := filepath.Rel(config.AppConf.ExposingDir, filepath.Dir(path))
 		if err != nil {
 			return err
 		}
@@ -56,9 +51,9 @@ func initSearch() {
 			fmt.Println("search.go:57 entry skipped", err)
 		}
 
-		file := File{Name: info.Name(), Dir: rel, IsDir: info.IsDir(), Size: info.Size(), ModTime: info.ModTime()}
+		file := models.File{Name: info.Name(), Dir: rel, IsDir: info.IsDir(), Size: info.Size(), ModTime: info.ModTime()}
 
-		res := db.Create(&file)
+		res := db.Db.Create(&file)
 
 		if res.Error != nil {
 			return res.Error
@@ -72,22 +67,22 @@ func initSearch() {
 
 }
 
-func search(query string, user string, page int) ([]EntryInfo, error) {
+func search(query string, user string, page int) ([]models.EntryInfo, error) {
 
-	skip := page * AppConf.SearchResultCount
+	skip := page * config.AppConf.SearchResultCount
 
-	remaining := AppConf.SearchResultCount + skip
-	var match1 []File
-	var match2 []File
-	var match3 []File
+	remaining := config.AppConf.SearchResultCount + skip
+	var match1 []models.File
+	var match2 []models.File
+	var match3 []models.File
 
-	err := db.
+	err := db.Db.
 		Where("name = ?", query).
 		Limit(remaining).
 		Find(&match1).Error
 
 	if err != nil {
-		return []EntryInfo{}, err
+		return []models.EntryInfo{}, err
 	}
 
 	match1 = filter(match1, user)
@@ -100,7 +95,7 @@ func search(query string, user string, page int) ([]EntryInfo, error) {
 			ids = append(ids, f.ID)
 		}
 
-		q := db.
+		q := db.Db.
 			Where("name LIKE ?", query+"%").
 			Limit(remaining)
 
@@ -111,7 +106,7 @@ func search(query string, user string, page int) ([]EntryInfo, error) {
 		err = q.Find(&match2).Error
 
 		if err != nil {
-			return []EntryInfo{}, err
+			return []models.EntryInfo{}, err
 		}
 
 		match2 = filter(match2, user)
@@ -123,7 +118,7 @@ func search(query string, user string, page int) ([]EntryInfo, error) {
 				ids = append(ids, f.ID)
 			}
 
-			q := db.
+			q := db.Db.
 				Where("name LIKE ?", "%"+query+"%").
 				Limit(remaining)
 
@@ -136,7 +131,7 @@ func search(query string, user string, page int) ([]EntryInfo, error) {
 			match3 = filter(match3, user)
 
 			if err != nil {
-				return []EntryInfo{}, err
+				return []models.EntryInfo{}, err
 			}
 		}
 
@@ -145,7 +140,7 @@ func search(query string, user string, page int) ([]EntryInfo, error) {
 	match := append(match1, append(match2, match3...)...)
 	match = match[skip:]
 
-	res := []EntryInfo{}
+	res := []models.EntryInfo{}
 
 	for _, el := range match {
 		_type := ""
@@ -155,14 +150,14 @@ func search(query string, user string, page int) ([]EntryInfo, error) {
 
 			_type = "file"
 		}
-		res = append(res, EntryInfo{Name: el.Name, Type: _type, Size: el.Size, FullName: filepath.Join(el.Dir, el.Name), ModTime: el.ModTime})
+		res = append(res, models.EntryInfo{Name: el.Name, Type: _type, Size: el.Size, FullName: filepath.Join(el.Dir, el.Name), ModTime: el.ModTime})
 	}
 
 	return res, nil
 
 }
 
-func searchHandle(w http.ResponseWriter, r *http.Request) {
+func SearchHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		w.WriteHeader(405)
 		return
@@ -202,11 +197,11 @@ func searchHandle(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func filter(match []File, user string) []File {
-	filtered := make([]File, 0, len(match))
+func filter(match []models.File, user string) []models.File {
+	filtered := make([]models.File, 0, len(match))
 
 	for _, file := range match {
-		_, _, exclude := rulesTree.Tree.LongestPrefix(file.Dir)
+		_, _, exclude := config.RulesTree.Tree.LongestPrefix(file.Dir)
 
 		if exclude && user == "" {
 			continue

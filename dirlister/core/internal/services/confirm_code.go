@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"errors"
@@ -8,19 +8,11 @@ import (
 
 	_ "gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"kerimniy.qzz.io/dirlister/internal/config"
+	db "kerimniy.qzz.io/dirlister/internal/database"
+
+	"kerimniy.qzz.io/dirlister/internal/models"
 )
-
-type User struct {
-	gorm.Model
-	Email     string `gorm:"unique;not null"`
-	CreatedAt time.Time
-	Password  []byte `gorm:"not null"`
-}
-
-type UserResponse struct {
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"createdAt"`
-}
 
 type AuthCode struct {
 	mu      sync.RWMutex
@@ -30,16 +22,16 @@ type AuthCode struct {
 
 var authCode = AuthCode{}
 
-func _admin_exist() Admin {
-	var user User
+func Admin_exist() config.AdminStruct {
+	var user models.User
 
-	err := db.Limit(1).First(&user).Error
+	err := db.Db.Limit(1).First(&user).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return Admin{Exist: false}
+		return config.AdminStruct{Exist: false}
 	}
-	
-	return Admin{Email: user.Email, Exist: true}
+
+	return config.AdminStruct{Email: user.Email, Exist: true}
 }
 
 func (a *AuthCode) Set(code string, ttl time.Duration) {

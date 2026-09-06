@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"encoding/json"
@@ -9,24 +9,19 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
+
+	"kerimniy.qzz.io/dirlister/internal/config"
+	db "kerimniy.qzz.io/dirlister/internal/database"
+	"kerimniy.qzz.io/dirlister/internal/models"
 )
 
-type EntryInfo struct {
-	Name     string    `json:"name"`
-	Type     string    `json:"type"`
-	Size     int64     `json:"size"`
-	FullName string    `json:"fullName"`
-	ModTime  time.Time `json:"modTime"`
-}
+func listDir(dir string, urlPath string, user string, page int) ([]models.EntryInfo, error) {
 
-func listDir(dir string, urlPath string, user string, page int) ([]EntryInfo, error) {
+	dirInfo := []models.EntryInfo{}
 
-	dirInfo := []EntryInfo{}
+	result := []models.File{}
 
-	result := []File{}
-
-	db.Where("dir = ?", urlPath).Offset(page * AppConf.ResultCount).Limit(AppConf.ResultCount).Find(&result)
+	db.Db.Where("dir = ?", urlPath).Offset(page * config.AppConf.ResultCount).Limit(config.AppConf.ResultCount).Find(&result)
 
 	for _, entry := range result {
 
@@ -34,7 +29,7 @@ func listDir(dir string, urlPath string, user string, page int) ([]EntryInfo, er
 			continue
 		}
 
-		_, _, match := rulesTree.Tree.LongestPrefix(entry.Dir)
+		_, _, match := config.RulesTree.Tree.LongestPrefix(entry.Dir)
 
 		if match == true && user == "" {
 			continue
@@ -48,7 +43,7 @@ func listDir(dir string, urlPath string, user string, page int) ([]EntryInfo, er
 			_type = "file"
 		}
 
-		entryInfo := EntryInfo{Name: entry.Name, Type: _type, ModTime: entry.ModTime, Size: entry.Size, FullName: filepath.Join(urlPath, entry.Name)}
+		entryInfo := models.EntryInfo{Name: entry.Name, Type: _type, ModTime: entry.ModTime, Size: entry.Size, FullName: filepath.Join(urlPath, entry.Name)}
 
 		dirInfo = append(dirInfo, entryInfo)
 	}
@@ -56,13 +51,13 @@ func listDir(dir string, urlPath string, user string, page int) ([]EntryInfo, er
 	return dirInfo, nil
 }
 
-func getDirHandle(w http.ResponseWriter, r *http.Request) {
+func GetDirHandle(w http.ResponseWriter, r *http.Request) {
 
 	urlPath := r.PathValue("path")
 
-	path := filepath.Join(AppConf.ExposingDir, urlPath)
+	path := filepath.Join(config.AppConf.ExposingDir, urlPath)
 
-	rel, err := filepath.Rel(AppConf.ExposingDir, path)
+	rel, err := filepath.Rel(config.AppConf.ExposingDir, path)
 	if err != nil {
 		w.WriteHeader(400)
 		return
@@ -74,7 +69,7 @@ func getDirHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _, match := rulesTree.Tree.LongestPrefix(urlPath)
+	_, _, match := config.RulesTree.Tree.LongestPrefix(urlPath)
 
 	if match == true && !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -142,13 +137,13 @@ func getDirHandle(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func listDirFS(dir string, urlPath string, user string) ([]EntryInfo, error) {
+func listDirFS(dir string, urlPath string, user string) ([]models.EntryInfo, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		panic(err)
 	}
 
-	dirInfo := []EntryInfo{}
+	dirInfo := []models.EntryInfo{}
 
 	for _, entry := range entries {
 
@@ -157,7 +152,7 @@ func listDirFS(dir string, urlPath string, user string) ([]EntryInfo, error) {
 			return nil, err
 		}
 
-		_, _, match := rulesTree.Tree.LongestPrefix(urlPath)
+		_, _, match := config.RulesTree.Tree.LongestPrefix(urlPath)
 
 		if len(info.Name()) > 0 && info.Name()[0] == '.' {
 			continue
@@ -175,7 +170,7 @@ func listDirFS(dir string, urlPath string, user string) ([]EntryInfo, error) {
 			_type = "file"
 		}
 
-		entryInfo := EntryInfo{Name: info.Name(), Type: _type, ModTime: info.ModTime(), Size: info.Size(), FullName: filepath.Join(urlPath, info.Name())}
+		entryInfo := models.EntryInfo{Name: info.Name(), Type: _type, ModTime: info.ModTime(), Size: info.Size(), FullName: filepath.Join(urlPath, info.Name())}
 
 		dirInfo = append(dirInfo, entryInfo)
 	}

@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"crypto/rand"
@@ -16,10 +16,10 @@ var s = securecookie.New(SECRET_KEY, nil)
 
 func InitSecretKey() {
 
-	file, f_err := os.Open("SECRET_KEY")
+	file, f_err := os.Open(".SECRET_KEY")
 	if f_err != nil {
 		_, e := rand.Read(SECRET_KEY)
-		f, err := os.Create("SECRET_KEY")
+		f, err := os.Create(".SECRET_KEY")
 		_, e1 := f.Write(SECRET_KEY)
 		if e != nil || err != nil || e1 != nil {
 			log.Fatal(e)
@@ -29,7 +29,7 @@ func InitSecretKey() {
 		_, err2 := file.Read(SECRET_KEY)
 		if err2 != nil {
 			_, e := rand.Read(SECRET_KEY)
-			f, err := os.Create("SECRET_KEY")
+			f, err := os.Create(".SECRET_KEY")
 			_, e1 := f.Write(SECRET_KEY)
 			if e != nil || err != nil || e1 != nil {
 				log.Fatal(e)

@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"encoding/json"
@@ -9,6 +9,8 @@ import (
 	"github.com/shirou/gopsutil/disk"
 
 	"regexp"
+
+	"kerimniy.qzz.io/dirlister/internal/config"
 )
 
 type Usage struct {
@@ -41,14 +43,14 @@ func getUsage(path string) (Usage, error) {
 
 }
 
-func getUsageHandle(w http.ResponseWriter, r *http.Request) {
+func GetUsageHandle(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
 		return
 	}
 
-	res, err := getUsage(AppConf.ExposingDir)
+	res, err := getUsage(config.AppConf.ExposingDir)
 
 	if err != nil {
 		w.WriteHeader(500)

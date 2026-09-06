@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"encoding/json"
@@ -7,34 +7,16 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/armon/go-radix"
-	"gorm.io/gorm"
+	"kerimniy.qzz.io/dirlister/internal/config"
+	db "kerimniy.qzz.io/dirlister/internal/database"
+
+	"kerimniy.qzz.io/dirlister/internal/models"
 )
 
-type RulesTree struct {
-	mu    sync.RWMutex
-	Tree  *radix.Tree
-	Dates map[string]time.Time
-}
 
-type Rule struct {
-	gorm.Model
-	ID        int    `gorm:"primaryKey"`
-	Path      string `gorm:"unique"`
-	CreatedAt time.Time
-}
-
-type RuleResponse struct {
-	Path      string    `json:"path"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
-var rulesTree RulesTree
-
-func createRule(w http.ResponseWriter, r *http.Request) {
+func CreateRule(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -48,7 +30,7 @@ func createRule(w http.ResponseWriter, r *http.Request) {
 
 	_time := time.Now()
 
-	err := db.Create(&Rule{Path: path, CreatedAt: _time}).Error
+	err := db.Db.Create(&models.Rule{Path: path, CreatedAt: _time}).Error
 
 	if err != nil {
 		w.WriteHeader(500)
@@ -56,11 +38,11 @@ func createRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rulesTree.Tree.Insert(path, true)
-	rulesTree.Dates[path] = _time
+	config.RulesTree.Tree.Insert(path, true)
+	config.RulesTree.Dates[path] = _time
 }
 
-func deleteRule(w http.ResponseWriter, r *http.Request) {
+func DeleteRule(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -93,19 +75,19 @@ func deleteRule(w http.ResponseWriter, r *http.Request) {
 
 	for _, entry := range payload {
 
-		result := db.Unscoped().Where("path = ?", entry).Delete(Rule{})
+		result := db.Db.Unscoped().Where("path = ?", entry).Delete(models.Rule{})
 
 		if result.Error != nil {
 			w.WriteHeader(500)
 			fmt.Println(result.Error)
 		}
 
-		rulesTree.Tree.Delete(entry)
-		delete(rulesTree.Dates, entry)
+		config.RulesTree.Tree.Delete(entry)
+		delete(config.RulesTree.Dates, entry)
 	}
 }
 
-func getRules(w http.ResponseWriter, r *http.Request) {
+func GetRules(w http.ResponseWriter, r *http.Request) {
 
 	if !checkAdmin(w, r) {
 		w.WriteHeader(403)
@@ -121,19 +103,19 @@ func getRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rulesList := []RuleResponse{}
+	rulesList := []models.RuleResponse{}
 
-	offset := page * AppConf.ResultCount
+	offset := page * config.AppConf.ResultCount
 
 	var i = 0
 
-	rulesTree.Tree.Walk(func(s string, v interface{}) bool {
+	config.RulesTree.Tree.Walk(func(s string, v interface{}) bool {
 		i++
 		if i <= offset {
 			return false
-		} else if i <= offset+AppConf.ResultCount {
+		} else if i <= offset+config.AppConf.ResultCount {
 
-			rulesList = append(rulesList, RuleResponse{Path: s, CreatedAt: rulesTree.Dates[s]})
+			rulesList = append(rulesList, models.RuleResponse{Path: s, CreatedAt: config.RulesTree.Dates[s]})
 
 			return false
 		} else {

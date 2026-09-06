@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"encoding/json"
@@ -9,42 +9,18 @@ import (
 	"os"
 
 	"gorm.io/gorm"
+	"kerimniy.qzz.io/dirlister/internal/config"
+	db "kerimniy.qzz.io/dirlister/internal/database"
+	"kerimniy.qzz.io/dirlister/internal/models"
 )
-
-type Email struct {
-	Email string `json:"email"`
-}
-
-type Register struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Code     string `json:"code"`
-}
-
-type ChangePassword struct {
-	CurrentPassword string `json:"currentPassword"`
-	NewPassword     string `json:"newPassword"`
-}
-
-type ResetPassword struct {
-	Email string `json:"email"`
-	Code  string `json:"code"`
-
-	NewPassword string `json:"newPassword"`
-}
-
-type Login struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
 
 func checkAdmin(w http.ResponseWriter, r *http.Request) bool {
 
-	fmt.Println(getSignedCookie(r, w), admin.Email)
-	return getSignedCookie(r, w) == admin.Email
+	fmt.Println(getSignedCookie(r, w), config.Admin.Email)
+	return getSignedCookie(r, w) == config.Admin.Email
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
+func GetUser(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("77", getSignedCookie(r, w))
 
@@ -53,7 +29,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if admin.Exist == false {
+	if config.Admin.Exist == false {
 		_, err := io.WriteString(w, "no-user")
 		if err != nil {
 			fmt.Println(err)
@@ -64,8 +40,8 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 
 	email := getSignedCookie(r, w)
 	fmt.Println("11", email)
-	user := User{}
-	err := db.Where("email= ?", email).First(&user).Error
+	user := models.User{}
+	err := db.Db.Where("email= ?", email).First(&user).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		w.WriteHeader(401)
@@ -82,7 +58,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(UserResponse{Email: user.Email, CreatedAt: user.CreatedAt})
+	b, err := json.Marshal(models.UserResponse{Email: user.Email, CreatedAt: user.CreatedAt})
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -95,13 +71,13 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func register(w http.ResponseWriter, r *http.Request) {
+func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(405)
 		return
 	}
 
-	if admin.Exist == true {
+	if config.Admin.Exist == true {
 		w.WriteHeader(412)
 		_, err := io.WriteString(w, "Admin already exists")
 		if err != nil {
@@ -116,7 +92,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	payload := Register{}
+	payload := models.Register{}
 	err := json.Unmarshal(b, &payload)
 
 	if err != nil {
@@ -126,7 +102,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println(payload.Code)
-	if !validate_code(payload.Email, payload.Code) {
+	if !validateCode(payload.Email, payload.Code) {
 		w.WriteHeader(400)
 
 		return
@@ -140,26 +116,26 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := User{
+	user := models.User{
 		Email:    payload.Email,
 		Password: password_hash,
 	}
 
-	res := db.Create(&user)
+	res := db.Db.Create(&user)
 	if res.Error != nil {
 		w.WriteHeader(500)
 		return
 	}
 
 	setSignedCookie(w, payload.Email)
-	admin.Exist = true
-	admin.Email = payload.Email
+	config.Admin.Exist = true
+	config.Admin.Email = payload.Email
 
 	w.WriteHeader(200)
 
 }
 
-func reset_password(w http.ResponseWriter, r *http.Request) {
+func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(405)
 		return
@@ -171,7 +147,7 @@ func reset_password(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	payload := ResetPassword{}
+	payload := models.ResetPassword{}
 	err := json.Unmarshal(b, &payload)
 
 	if err != nil {
@@ -180,7 +156,7 @@ func reset_password(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validate_code(payload.Email, payload.Code) {
+	if !validateCode(payload.Email, payload.Code) {
 		w.WriteHeader(400)
 		return
 	}
@@ -192,7 +168,7 @@ func reset_password(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := db.Model(&User{}).Where("email= ?", payload.Email).Update("password", newPwd)
+	res := db.Db.Model(&models.User{}).Where("email= ?", payload.Email).Update("password", newPwd)
 
 	if res.Error != nil {
 		w.WriteHeader(500)
@@ -200,13 +176,13 @@ func reset_password(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(405)
 		return
 	}
 
-	if admin.Exist == false {
+	if config.Admin.Exist == false {
 		w.WriteHeader(412)
 		_, err := io.WriteString(w, "Admin not exists")
 		if err != nil {
@@ -222,7 +198,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	payload := Login{}
+	payload := models.Login{}
 	err := json.Unmarshal(b, &payload)
 	if err != nil {
 		fmt.Println(err)
@@ -230,8 +206,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qres := User{}
-	res := db.Where("email= ?", payload.Email).First(&qres)
+	qres := models.User{}
+	res := db.Db.Where("email= ?", payload.Email).First(&qres)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			w.WriteHeader(400)
@@ -267,11 +243,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func logout(w http.ResponseWriter, r *http.Request) {
+func Logout(w http.ResponseWriter, r *http.Request) {
 	deleteCookie(w)
 }
 
-func change_password(w http.ResponseWriter, r *http.Request) {
+func Change_password(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(405)
 		return
@@ -283,7 +259,7 @@ func change_password(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	payload := ChangePassword{}
+	payload := models.ChangePassword{}
 	err := json.Unmarshal(b, &payload)
 
 	if err != nil {
@@ -294,8 +270,8 @@ func change_password(w http.ResponseWriter, r *http.Request) {
 
 	usermail := getSignedCookie(r, w)
 
-	user := User{}
-	res := db.Where("email= ?", usermail).First(&user)
+	user := models.User{}
+	res := db.Db.Where("email= ?", usermail).First(&user)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -318,6 +294,6 @@ func change_password(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	db.Model(&User{}).Where("email= ?", usermail).Update("password", newPwd)
+	db.Db.Model(&models.User{}).Where("email= ?", usermail).Update("password", newPwd)
 	w.WriteHeader(200)
 }
