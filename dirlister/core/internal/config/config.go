@@ -25,7 +25,7 @@ var AppConf = Config{}
 var Admin AdminStruct
 var RulesTree models.RulesTree
 
-func initConf() {
+func InitConf() {
 
 	err := godotenv.Load("./../.env")
 

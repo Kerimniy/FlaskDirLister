@@ -8,11 +8,15 @@ import (
 	db "kerimniy.qzz.io/dirlister/internal/database"
 	"kerimniy.qzz.io/dirlister/internal/services"
 	"kerimniy.qzz.io/dirlister/internal/transport"
+	"kerimniy.qzz.io/dirlister/pkg/tgbot"
 )
 
 func main() {
 
 	fmt.Println(time.Now(), "Starting... ")
+
+	config.InitConf()
+	fmt.Println(time.Now(), "Initialized config ")
 
 	services.InitSecretKey()
 	fmt.Println(time.Now(), "Initialized secret key ")
@@ -20,8 +24,8 @@ func main() {
 	db.InitDb()
 	fmt.Println(time.Now(), "Initialized database ")
 
-	services.InitMail()
-	fmt.Println(time.Now(), "Initialized mail service ")
+	tgbot.InitTGBot()
+	fmt.Println(time.Now(), "Initialized tg bot service ")
 
 	services.InitSearch()
 	fmt.Println(time.Now(), "Initialized search")

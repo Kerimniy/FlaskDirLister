@@ -6,40 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"text/template"
 	"time"
 
-	"bytes"
 	"math/rand"
 
-	"github.com/wneessen/go-mail"
 	"kerimniy.qzz.io/dirlister/internal/models"
+	"kerimniy.qzz.io/dirlister/pkg/tgbot"
 )
 
-type Mail struct {
-	From string
-
-	Username string
-	Password string
-	SMTP     string
-}
-
-var mail_conf Mail
 var ctx = context.Background()
-
-var tmpl = template.Must(template.ParseFiles("assets/recovery.html"))
-
-func InitMail() {
-
-	mail_conf = Mail{
-		Username: os.Getenv("USER"),
-		From:     os.Getenv("FROM"),
-		Password: os.Getenv("PASSWORD"),
-		SMTP:     os.Getenv("SMTP"),
-	}
-
-}
 
 func validateCode(address string, code string) bool {
 
@@ -56,45 +31,10 @@ func sendConfirm(address string) error {
 
 	code := fmt.Sprintf("%06d", rand.Intn(999999))
 
-	fmt.Println(code)
-
 	authCode.Set(code, time.Minute*10)
 
-	var tpl bytes.Buffer
+	return tgbot.SendCode(code)
 
-	//tmpl.Execute(&tpl, code)
-
-	from := mail_conf.From
-	host := mail_conf.SMTP
-	username := mail_conf.Username
-	password := mail_conf.Password
-
-	message := mail.NewMsg()
-	if err := message.From(from); err != nil {
-		return fmt.Errorf("failed to set From address: %s", err)
-	}
-	if err := message.To(address); err != nil {
-		return fmt.Errorf("failed to set To address: %s", err)
-	}
-
-	message.Subject("Email confirmation")
-	message.SetBodyString(mail.TypeTextHTML, tpl.String())
-
-	client, err := mail.NewClient(host,
-
-		mail.WithSMTPAuth(mail.SMTPAuthPlain),
-		mail.WithUsername(username),
-		mail.WithPassword(password),
-		mail.WithTimeout(time.Duration(10)*time.Second),
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to create mail client: %s", err)
-	}
-	if err := client.DialAndSend(message); err != nil {
-		return fmt.Errorf("failed to send mail: %s", err)
-	}
-	return nil
 }
 
 func RequestConfirmCode(w http.ResponseWriter, r *http.Request) {
